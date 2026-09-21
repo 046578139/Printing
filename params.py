@@ -398,8 +398,19 @@ PINCH_EDGE      = 0.80    # top edge break; bottom is the plate face, stays flat
 # outer arm. So the outer arm stops half way up the band and the inner arm's
 # tab rides over the top of it. The two tabs end up at different heights,
 # which is exactly why they can lap past each other rather than collide.
-LAP_DEG         = 30.00   # how far the ends lap at rest
-LAP_END_CLEAR   = 2.00    # deg between a free end and the step it retreats
+# 50, and every degree of that is paid for. A tab has to sit INSIDE its own
+# arm - a tab centred on the free end hangs half its width past it and welds
+# the arm to the body, which locks the ring solid while still passing every
+# topology and bore check. So each tab is inset 7 deg from its tip, which
+# costs 14 deg of separation; the free ends need 1.5 deg each so they are not
+# butted at rest; and the squeeze itself eats 11.9 deg. What is left has to
+# keep the two tab heads apart, because they both reach the plate and cannot
+# pass. 50 leaves 3.7 mm at full squeeze. Insetting does NOT change the
+# mechanism - the arms are rigid, so both tabs turn with their arm by the
+# same angle wherever they sit on it.
+LAP_DEG         = 50.00   # how far the ends lap at rest
+LAP_TAB_INSET   = 7.00    # deg each tab sits inboard of its own free end
+LAP_END_CLEAR   = 1.50    # deg between a free end and the step it retreats
                           # from, so nothing is butted solid at rest
 LAP_SLIDE       = 0.40    # radial gap between the nested arms
 # NOT an even split. The outer arm is a bare strip over its whole height,
@@ -413,6 +424,13 @@ LAP_ARM_IN      = 1.20    # inner arm: thin only below the split
 LAP_ARM_OUT     = COL_WALL - LAP_SLIDE - LAP_ARM_IN
 LAP_SPLIT_Z     = 6.50    # top of the outer arm
 LAP_SLIDE_Z     = 0.30    # vertical gap the upper flange bridges
+# Each arm is built to overlap its root INTO the body by this much. An arm
+# that merely butts the body on a coplanar radial face does not weld to it -
+# manifold leaves them as separate shells, exactly as noted in
+# prism_chamfered. The part passed as one shell only while the tabs were
+# still overhanging their free ends and accidentally welding the arms to the
+# body; fixing that fusion is what exposed the butt joints underneath.
+LAP_WELD        = 3.00    # deg each arm runs past its root into the body
 
 LAP_AT          = 90.0    # o'clock position of the lap; 90 = top
 LAP_INTERF      = 0.90    # free bore this far under the seat; this is the grip
@@ -420,7 +438,8 @@ LAP_CLEAR       = 0.40    # extra expansion so it slides rather than scrapes
 LAP_BORE        = OBJ_COLLAR_OD - LAP_INTERF + BORE_BIAS
 
 LAP_TAB_PROJ    = PINCH_TAB_PROJ
-LAP_TAB_W       = PINCH_TAB_W
+LAP_TAB_W       = 3.60    # narrower than 01e's: every mm of stem width
+                          # costs two degrees of tab inset
 LAP_TAB_HEAD    = PINCH_TAB_HEAD
 LAP_ROUND       = PINCH_ROUND
 LAP_ROOT_R      = PINCH_ROOT_R

@@ -489,19 +489,24 @@ def test_collar_pinch():
 def test_collar_lap():
     """01f - the lapped ring. The ends cross, so the tabs SQUEEZE together.
 
-    The whole mechanism lives in two clearances that no dimension check can
-    see: a radial gap between the nested arms below the split, and a vertical
-    gap above the outer arm. Lose either one and the arms fuse into a solid
-    ring that cannot be expanded at all - and it would still pass topology,
-    still be watertight, still measure the right bore, and still look
-    completely correct in a render. So they are probed.
+    Everything that matters here is a CLEARANCE, and a clearance has to be
+    SWEPT rather than sampled. A single probe at the middle of the lap passed
+    while the ring was welded solid in three separate places: the lower tab's
+    stem crossed the slide gap, both tabs overhung their own free end into
+    the body, and - once those were fixed - the arms turned out never to have
+    been welded to the body at all, only to each other through the fusions.
+    Every one of those still gave one watertight shell with the right bore
+    and a render that looked perfect.
     """
     import math as _m
     m = lapcollar.build()
-    topology(m, "collar_lap", expect_genus=3)
+    # genus 2, same as any split ring with two cord holes. It read 3 and then
+    # 4 while the arms were fused - a closed loop of material adds a handle,
+    # so the genus WAS the tell, if anyone had asked it.
+    topology(m, "collar_lap", expect_genus=2)
 
     # Section arithmetic. The two arms plus the slide gap ARE the wall; if
-    # they ever stop summing, one arm is silently eating the other's clearance.
+    # they stop summing, one arm is eating the other's clearance.
     check(abs(P.LAP_ARM_IN + P.LAP_SLIDE + P.LAP_ARM_OUT - P.COL_WALL) < 1e-9,
           "lap arms %.2f + %.2f and a %.2f slide do not make a %.2f wall"
           % (P.LAP_ARM_IN, P.LAP_ARM_OUT, P.LAP_SLIDE, P.COL_WALL))
@@ -511,68 +516,94 @@ def test_collar_lap():
     check(P.LAP_SLIDE_Z >= P.LAYER,
           "a %.2f vertical gap is under one %.2f layer - the flange will weld "
           "to the outer arm" % (P.LAP_SLIDE_Z, P.LAYER))
+    check(P.LAP_WELD > 0.0,
+          "arms must overlap their roots INTO the body - a coplanar butt "
+          "joint does not weld, it leaves loose shells")
 
-    # THE CLEARANCES. This is the part that matters.
     rb = P.LAP_BORE / 2.0
     r_i1 = rb + P.LAP_ARM_IN
     r_o1 = r_i1 + P.LAP_SLIDE
     r_o = rb + P.COL_WALL
     zs, gz = P.LAP_SPLIT_Z, P.LAP_SLIDE_Z
-    A = _m.radians(P.LAP_AT)
+    lo, hi = P.LAP_END_CLEAR, P.LAP_DEG - P.LAP_END_CLEAR
 
-    def at(r, z, want, name):
-        p = (r * _m.cos(A), r * _m.sin(A), z)
-        got = solid_at(m, p, s=0.14)
-        check(got == want, "lap %s: wanted %s at r=%.2f z=%.2f, got %s"
-              % (name, "solid" if want else "empty", r, z,
-                 "solid" if got else "empty"))
+    def at(r, ang_local, z, sz=0.16):
+        a = _m.radians(P.LAP_AT - P.LAP_DEG / 2.0 + ang_local)
+        return solid_at(m, (r * _m.cos(a), r * _m.sin(a), z), s=sz)
 
-    at(rb + 0.6,          3.0,        True,  "inner arm below split")
-    at((r_i1 + r_o1) / 2, 3.0,        False, "RADIAL slide gap")
-    at((r_o1 + r_o) / 2,  3.0,        True,  "outer arm below split")
-    at((r_o1 + r_o) / 2,  zs + gz/2,  False, "VERTICAL slide gap")
-    at(rb + 0.6,          zs + gz/2,  True,  "inner arm through the gap")
-    at((r_o1 + r_o) / 2,  zs + gz+1.5, True, "flange above the gap")
-    at((r_i1 + r_o1) / 2, zs + gz+1.5, True, "flange closes the radial gap")
-    # Opposite the lap the band must be plain full wall, not split.
-    A = _m.radians(P.LAP_AT + 180.0)
-    at((r_i1 + r_o1) / 2, 3.0, True, "body is full wall opposite the lap")
+    # 1. Radial slide gap, open right across the overlap.
+    bad = [a for a in range(0, int(P.LAP_DEG) + 1)
+           if lo <= a <= hi and at(r_i1 + P.LAP_SLIDE / 2, a, 3.0)]
+    check(not bad,
+          "radial slide gap is fused at %s deg - the arms cannot move and "
+          "the ring will not expand at all" % bad)
 
-    # The two tabs must NOT share a height, or they collide before the ring
-    # has expanded. This is the reason the outer arm is cut down at all.
-    lo = (0.0, zs)
-    hi = (zs + gz, P.COL_HEIGHT)
-    check(lo[1] <= hi[0],
-          "the two tabs overlap in Z (%.2f-%.2f and %.2f-%.2f) - they will "
-          "butt heads instead of lapping past each other" % (lo + hi))
-    check(hi[1] - hi[0] >= 3.0,
-          "upper tab is only %.2f mm tall - not enough to squeeze"
-          % (hi[1] - hi[0]))
-    check(lo[1] - lo[0] >= 3.0,
-          "lower tab is only %.2f mm tall - not enough to squeeze"
-          % (lo[1] - lo[0]))
+    # 2. Vertical slide gap above the outer arm.
+    bad = [a for a in range(int(lo) + 1, int(hi))
+           if at(r_o - 0.8, a, zs + gz / 2, sz=0.14)]
+    check(not bad, "vertical slide gap is fused at %s deg" % bad)
 
+    # 3. Each free end clear of the body it retreats from, at every height.
+    bad = [(a, r, z) for a in (hi + 0.5, P.LAP_DEG - 0.5)
+           for r in (rb + 0.3, r_i1 - 0.4) for z in (2.0, 5.0, 8.0, 10.0)
+           if at(r, a, z)]
+    check(not bad, "the inner arm's tip is welded to the body at %s" % bad[:3])
+    bad = [(a, r, z) for a in (0.5, lo - 0.3)
+           for r in (r_o1 + 0.3, r_o - 0.3) for z in (1.0, 4.0, 6.0)
+           if at(r, a, z)]
+    check(not bad, "the outer arm's tip is welded to the body at %s" % bad[:3])
+
+    # 4. Full wall opposite the lap.
+    check(at((r_i1 + r_o1) / 2, P.LAP_DEG / 2 + 180.0, 3.0),
+          "the body is not full wall opposite the lap")
+
+    # 5. NO FLOATING CANTILEVER. The upper tab's root starts above the outer
+    # arm to get out past it, and outboard of the band OD there is nothing
+    # underneath at any height - so unless it carries down to the plate it is
+    # a fin hanging 6.8 mm in the air. The slicer catches this; nothing else
+    # here did.
+    for tag, ang in (("upper", lapcollar.A_TAB_IN),
+                     ("lower", lapcollar.A_TAB_OUT)):
+        for rr in (r_o + 1.4, r_o + P.LAP_TAB_PROJ):
+            check(at(rr, ang, 0.4, sz=0.2),
+                  "%s tab is not on the plate at r=%.2f - floating cantilever"
+                  % (tag, rr))
+
+    # 6. Each tab must sit INSIDE its own arm, or it overhangs the free end
+    # and welds that arm to the body. And because both now reach the bed they
+    # cannot lap past each other, so they must never meet.
     r = lapcollar.mechanics()
+    half = _m.degrees(_m.asin((P.LAP_TAB_W / 2.0) / r_o1))
+    check(P.LAP_TAB_INSET > half,
+          "tab inset %.1f deg is under its own half-width %.1f deg - it will "
+          "overhang the free end and weld the arm to the body"
+          % (P.LAP_TAB_INSET, half))
+    sep = _m.radians(P.LAP_DEG - 2 * P.LAP_END_CLEAR - 2 * P.LAP_TAB_INSET
+                     - _m.degrees(r["spread"] / ((P.LAP_BORE + P.COL_WALL) / 2)))
+    clear = 2 * (r_o + P.LAP_TAB_PROJ) * _m.sin(sep / 2) - P.LAP_TAB_HEAD
+    check(clear > 3.0,
+          "only %.1f mm between the tab heads at full squeeze - they collide "
+          "before the ring has finished expanding" % clear)
+    check(zs >= 3.0 and P.COL_HEIGHT - zs - gz >= 3.0,
+          "tab roots are %.2f and %.2f mm tall - too little to grip"
+          % (zs, P.COL_HEIGHT - zs - gz))
+
+    # 7. Mechanics.
     check(r["strain"] < 0.015,
           "install strain %.2f%% exceeds PLA's ~1.5%% limit"
           % (r["strain"] * 100))
     check(r["strain"] < 0.015 / 2.0,
           "install strain %.2f%% leaves under 2x margin in PLA"
           % (r["strain"] * 100))
-    check(3.0 < r["force"] < 40.0,
-          "%.0f N at the tabs is outside what two fingers do comfortably"
+    check(1.5 < r["force"] < 40.0,
+          "%.1f N at the tabs is outside what two fingers do usefully"
           % r["force"])
     check(r["seated"] > 0.0010,
           "seated strain %.3f%% is too low to hold the cap's orientation"
           % (r["seated"] * 100))
-
-    # It has to still be lapped at full expansion, or it un-laps into a
-    # C-ring halfway through being fitted and never goes back.
     check(r["lap_open"] >= 8.0,
           "only %.1f deg of lap left at full expansion - it will un-lap in "
           "your fingers" % r["lap_open"])
-    check(P.LAP_DEG > _m.degrees(r["spread"] / ((P.LAP_BORE + P.COL_WALL) / 2)),
-          "the squeeze needs more arc than the whole lap has")
 
     probe(m, "lap ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
     probe(m, "lap ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)

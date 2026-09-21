@@ -36,7 +36,7 @@ PARTS = {
     "collar_snap": (snapcollar.build, 2, snapcollar.META),
     "collar_lever": (snapcollar.build_lever, 2, snapcollar.META_LEVER),
     "collar_pinch": (pinchcollar.build, 2, pinchcollar.META),
-    "collar_lap": (lapcollar.build, 3, lapcollar.META),
+    "collar_lap": (lapcollar.build, 2, lapcollar.META),
     "shroud": (shroud.build, 1, shroud.META),
     "killflash": (killflash.build, None, killflash.META),
     "cap": (cap.build, 2, cap.META),

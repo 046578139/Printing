@@ -18,21 +18,44 @@ which brings the tips, and the tabs on them, together. The motion reverses.
 What the thickness step forces
 ------------------------------
 The inner arm's tab has to get out past the outer arm, and radially there is
-no way through. So the outer arm stops half way up the band and the inner
-arm carries a full-width flange above it, from which its tab projects. The
-two tabs end up at different heights - which is not a workaround, it is what
-lets them lap past each other instead of butting heads. At full squeeze they
-are only a few millimetres apart in plan and would collide if they shared a
-height.
+no way through. So the outer arm stops at 6.5 mm and the inner arm carries a
+full-width flange above it, from which its tab projects.
 
-    lap 30 deg at rest = 10.3 mm of arc
+That leaves the upper tab starting half way up the band with nothing at all
+underneath it outboard of the OD - a fin hanging 6.8 mm in the air, which a
+slicer flags as a floating cantilever and is right to. Outboard of the band
+nothing is in the way, so the tab carries straight down to the plate there,
+clear of the outer arm by the same 0.40 mm the arms use.
+
+Which is why the lap is 50 degrees. Tabs at different heights could lap past
+each other; tabs that both reach the bed cannot, so they have to stay apart.
+And a tab may not sit ON its arm's free end - it hangs half its width past it
+and welds that arm to the body. So each is inset 7 deg, which costs another
+14 deg of separation. What is left keeps the heads 3.7 mm apart even fully
+squeezed. Insetting does not change the mechanism: the arms are rigid, so a
+tab turns with its arm by the same angle wherever it sits on it.
+
+    lap 50 deg at rest = 17.1 mm of arc
     squeeze consumes 11.9 deg = 4.1 mm -> bore grows 1.30 mm
-    18 deg = 6.2 mm still lapped at full expansion
+    38 deg = 13.0 mm still lapped at full expansion
+    2.9 N at the tabs, 0.66 % peak strain (2.3x margin in PLA)
 
-Print orientation: REAR FACE DOWN, plate face flat. Everything is a
-vertical-walled extrusion except the upper flange, which bridges the
-0.30 mm sliding gap above the outer arm - a print-in-place clearance, not
-an overhang.
+Three ways this part can be built welded solid, all of which still give one
+watertight shell with the correct bore:
+
+  * a tab stem reaching 3 mm inside the OD crosses the 0.40 mm slide gap
+  * a tab centred on a free end overhangs it into the body
+  * an arm root that merely BUTTS the body on a coplanar radial face never
+    welds to it at all - the part held together only through the two
+    fusions above, and fixing them is what exposed it
+
+Each of those is caught by sweeping a probe along the whole feature. None is
+caught by probing one point, or by any dimension, volume or topology check.
+
+Print orientation: REAR FACE DOWN, plate face flat. Every feature either
+stands on the plate or bridges the 0.30 mm sliding gap above the outer arm -
+a print-in-place clearance, not an overhang. No supports, no floating
+cantilevers.
 """
 
 import math
@@ -51,6 +74,10 @@ R_OUT = P.LAP_BORE / 2.0 + P.COL_WALL
 #   inner arm : root at 0,       free end (and its tab) at LAP_DEG - END_CLEAR
 A_OUT_TIP = P.LAP_END_CLEAR
 A_IN_TIP = P.LAP_DEG - P.LAP_END_CLEAR
+# Tabs sit INSIDE their own arm, not centred on its tip. A tab centred on the
+# free end hangs half its width past it and welds that arm to the body.
+A_TAB_OUT = A_OUT_TIP + P.LAP_TAB_INSET
+A_TAB_IN = A_IN_TIP - P.LAP_TAB_INSET
 
 
 def mechanics(bore: float = None, expansion: float = None,
@@ -130,13 +157,34 @@ def _arc(r_in: float, r_out: float, a0: float, a1: float,
         .extrude(z1 - z0).translate([0.0, 0.0, z0])
 
 
-def _tab(r_out: float, angle: float, z0: float, z1: float) -> Manifold:
-    """Finger tab at `angle`, occupying only z0..z1 so it can lap past the
-    other one. Rooted at `angle` and rounded everywhere - these are the most
-    snag-prone features on the part and the only ones you handle."""
+def _tab(r_out: float, angle: float, z0: float, z1: float,
+         root_r: float = None, column_r: float = None) -> Manifold:
+    """Finger tab at `angle`. Rounded everywhere - these are the most
+    snag-prone features on the part and the only ones you handle.
+
+    `column_r` carries the tab down to the plate outboard of that radius.
+    The upper tab's root has to start above the outer arm to get out past
+    it, and outboard of the band there is nothing underneath at all - so
+    without this the tab is a fin hanging 6.8 mm in the air, which the
+    slicer flags as a floating cantilever and is right to. Outboard of
+    column_r nothing is in the way, so the tab simply stands on the bed and
+    is a stiffer thing to push on for it.
+    """
     prof = pinch_tab_2d(r_out, P.LAP_TAB_PROJ, P.LAP_TAB_W,
-                        P.LAP_TAB_HEAD, P.LAP_ROUND).rotate(angle)
-    return prof.extrude(z1 - z0).translate([0.0, 0.0, z0])
+                        P.LAP_TAB_HEAD, P.LAP_ROUND)
+    # CLIP THE ROOT. The stem reaches 3 mm inside the band OD so a tab on a
+    # plain ring has something to root into - but on a lapped ring that 3 mm
+    # crosses the 0.40 mm slide gap and welds the two arms together. Each tab
+    # may only reach as far in as its OWN arm goes.
+    if root_r:
+        prof = prof - circle2d(2.0 * root_r, SEG)
+    prof = prof.rotate(angle)
+    tab = prof.extrude(z1 - z0).translate([0.0, 0.0, z0])
+    if column_r is not None and z0 > 0.0:
+        # Overlap into the tab above; a coplanar butt does not weld.
+        col = (prof - circle2d(2.0 * column_r, SEG)).extrude(z0 + 1.0)
+        tab = union([tab, col])
+    return tab
 
 
 def _ear(angle: float, r_out: float, label: str = None) -> Manifold:
@@ -170,16 +218,21 @@ def band(bore: float = None) -> Manifold:
     # Inner arm: rooted at 0, free at A_IN_TIP. Thin and full height, with a
     # full-width flange above the sliding gap - that flange is what carries
     # its tab out past the outer arm.
-    parts.append(_arc(r_b, r_i1, 0.0, A_IN_TIP, 0.0, h))
-    parts.append(_arc(r_i1, r_o, 0.0, A_IN_TIP, zs + P.LAP_SLIDE_Z, h))
+    parts.append(_arc(r_b, r_i1, -P.LAP_WELD, A_IN_TIP, 0.0, h))
+    parts.append(_arc(r_i1, r_o, -P.LAP_WELD, A_IN_TIP,
+                      zs + P.LAP_SLIDE_Z, h))
 
     # Outer arm: rooted at LAP_DEG, free at A_OUT_TIP. Lower half only, so
     # the inner arm's flange can ride over it.
-    parts.append(_arc(r_o1, r_o, A_OUT_TIP, P.LAP_DEG, 0.0, zs))
+    parts.append(_arc(r_o1, r_o, A_OUT_TIP, P.LAP_DEG + P.LAP_WELD,
+                      0.0, zs))
 
     # Tabs, one on each free end, at the two different heights.
-    parts.append(_tab(r_o, A_OUT_TIP, 0.0, zs))
-    parts.append(_tab(r_o, A_IN_TIP, zs + P.LAP_SLIDE_Z, h))
+    parts.append(_tab(r_o, A_TAB_OUT, 0.0, zs, root_r=r_o1))
+    # Clear of the outer arm by the same slide gap the arms use, so the
+    # column can pass it without fusing.
+    parts.append(_tab(r_o, A_TAB_IN, zs + P.LAP_SLIDE_Z, h,
+                      column_r=r_o + P.LAP_SLIDE))
     return union(parts)
 
 

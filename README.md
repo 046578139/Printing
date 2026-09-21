@@ -24,7 +24,7 @@ retained with 1/8 in shock cord.
 
 | File | Part | What it does |
 |---|---|---|
-| `stl/01f_collar_lap.stl` | **Collar, lapped — print this one** | The recorder mount's actual mechanism: the band wraps 390° so its two ends lap past each other, each carrying a finger tab. **Squeeze** the tabs together and the lap shortens, which makes the circle bigger. Tabs sit at different heights so they lap past each other rather than colliding. No hardware, no tools — [how it works](docs/ASSEMBLY.md#01f-is-the-one-to-print). **Goes on BEFORE the housing.** |
+| `stl/01f_collar_lap.stl` | **Collar, lapped — print this one** | The recorder mount's actual mechanism: the band wraps 410° so its two ends lap past each other, each carrying a finger tab. **Squeeze** the tabs together and the lap shortens, which makes the circle bigger. 2.9 N — the lightest squeeze of any collar here. No hardware, no tools — [how it works](docs/ASSEMBLY.md#01f-is-the-one-to-print). **Goes on BEFORE the housing.** |
 | `stl/01e_collar_pinch.stl` | Collar, pinch | Reads closed at 340°, tabs flanking a gap — you **spread** these, not squeeze them. Lowest install strain in the set and no sliding clearance for a slicer to get wrong, so it is the fallback if `01f`'s lap fuses. **Goes on BEFORE the housing.** |
 | `stl/01_collar.stl` | Collar, screw clamp | Split band clamp, M3 pinch screw. The only one that can be fitted *after* the housing, and the only one with a preload you can re-tighten. |
 | `stl/01b_collar_proto.stl` | Collar, wide gap | Prototype only. Opens far enough to clamp anywhere across the plausible range, for use before the collar seat has been gauged. Needs an M3 × 30 screw. |
@@ -56,7 +56,7 @@ and softens around 55–60 °C; an afternoon on a dashboard will destroy it.
 
 ```bash
 python3 build.py        # writes one STL per part into stl/
-python3 tests.py        # 276 geometry and interface checks
+python3 tests.py        # 277 geometry and interface checks
 python3 render.py       # PNG previews into preview/
 ```
 
