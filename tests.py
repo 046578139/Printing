@@ -529,10 +529,48 @@ def test_assembly():
               "%s does not start at Z=0 - its plate face is chamfered" % name)
 
 
+def test_export_orientation():
+    """The exported file must already be in the orientation the docs claim.
+
+    A file that has to be flipped by hand before slicing is a file that will
+    eventually be sliced unflipped - which is exactly how the housing got
+    printed upside down and strung the whole way up its bore.
+    """
+    import build
+
+    c = build.orient("cap", cap.build())
+    z0, z1 = c.bounding_box()[2], c.bounding_box()[5]
+    check(abs(z0) < 1e-6, "oriented cap does not sit on Z=0")
+    # r=15 is outside the centre mark but inside the register pocket, so it
+    # tells the two faces apart. Face plate solid, pocket not.
+    check(solid_at(c, (15.0, 0.0, z0 + 0.8)),
+          "cap: no material just above the plate at r=15 - it is upside down")
+    check(not solid_at(c, (15.0, 0.0, z1 - 0.8)),
+          "cap: solid at r=15 near the top - the pocket is facing down")
+
+    s = build.orient("shroud", shroud.build())
+    z0, z1 = s.bounding_box()[2], s.bounding_box()[5]
+    check(abs(z0) < 1e-6, "oriented shroud does not sit on Z=0")
+    # r=17.8 sits between the 33.00 front recess and the 36.90 rear bore.
+    check(solid_at(s, (17.8, 0.0, z0 + 1.5)),
+          "shroud: no material at r=17.8 near the plate - front is not down")
+    check(not solid_at(s, (17.8, 0.0, z1 - 1.5)),
+          "shroud: solid at r=17.8 near the top - it is upside down")
+
+    # Parts modelled plate-side-down must be left alone.
+    for name, fn in (("collar", collar.build),
+                     ("collar_snap", snapcollar.build),
+                     ("killflash", killflash.build)):
+        m = fn()
+        check(abs(build.orient(name, m).volume() - m.volume()) < 1e-6,
+              "%s should not be reoriented on export" % name)
+
+
 def main():
     for fn in (test_interfaces, test_collar, test_collar_proto,
                test_collar_snap, test_collar_lever, test_shroud,
-               test_killflash, test_cap, test_assembly):
+               test_killflash, test_cap, test_assembly,
+               test_export_orientation):
         name = fn.__name__.replace("test_", "")
         before = len(FAILS)
         fn()

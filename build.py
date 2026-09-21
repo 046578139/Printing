@@ -50,6 +50,24 @@ FILENAME = {
 }
 
 
+# Parts whose PRINT orientation is not the orientation they are modelled in.
+# Exporting a part that then has to be flipped by hand is how the housing got
+# printed upside down and strung the whole way up: the documentation said one
+# thing and the file said another. The file now says the same thing.
+def _flip(man, height):
+    return man.rotate([180, 0, 0]).translate([0, 0, height])
+
+
+def orient(name, man):
+    """Put a part into the orientation its META describes, so it can be
+    dropped straight onto the plate."""
+    if name == "cap":
+        return _flip(man, P.CAP_T)            # decorated face down
+    if name == "shroud":
+        return _flip(man, shroud.TOTAL)       # front register down
+    return man                                 # already plate-side-down
+
+
 def to_trimesh(man):
     m = man.to_mesh()
     return trimesh.Trimesh(vertices=np.asarray(m.vert_properties[:, :3]),
@@ -124,7 +142,7 @@ def main(argv):
             continue
         fn, g, meta = PARTS[name]
         out = FILENAME[name] + ("_" + opts["tag"] if "tag" in opts else "")
-        rows.append(build_one(name, fn(), g, meta, out))
+        rows.append(build_one(name, orient(name, fn()), g, meta, out))
 
     GAUGES = (
         ("shroud", "shroud bore", P.OBJ_FRONT_OD, P.FIT_PRESS, "05_gauge_shroud"),

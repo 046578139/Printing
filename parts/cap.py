@@ -101,5 +101,5 @@ META = dict(
     name="04_flip_cap",
     desc="Bungee flip cap. Cord bosses at 3/9, thumb tab at 6, hex grip, "
          "register pocket that drops over the shroud.",
-    orient="FRONT FACE DOWN (decorated face on the plate). No supports.",
+    orient="Decorated face down - ALREADY ORIENTED. No supports.",
 )

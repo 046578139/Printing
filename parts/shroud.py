@@ -131,5 +131,5 @@ META = dict(
     name="02_killflash_housing",
     desc="Shroud: presses onto the objective bezel, holds the kill flash, "
          "gives the cap a register to close on.",
-    orient="FRONT FACE DOWN (register on the plate). No supports.",
+    orient="Front face down - ALREADY ORIENTED. No supports.",
 )
