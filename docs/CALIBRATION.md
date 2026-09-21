@@ -18,8 +18,22 @@ you cannot re-buy expires silently.
 | 2026-09-21 | coarse | PLA | 36.15 → 40.15, 0.50 steps | **36.65 would not go on; 37.15 went on loose** → bracketed between them |
 | 2026-09-21 | fine | PLA | 36.60 → 37.20, 0.10 steps | **36.90 wins** — mid-ladder, not at an edge |
 | | production | PAHT-CF | 36.85 → 37.15, 0.05 steps | *pending — needs a 2–3 week soak before reading* |
+| | **re-gauge** | **PLA on a 0.40 nozzle** | 36.45 → 37.05, 0.10 steps | *pending — the reading above is not valid on this hotend* |
 
-**In force:** `OBJ_FRONT_OD = 36.90 − FIT_PRESS = 36.75`, `CAL_MATERIAL = "PLA"`.
+**In force:** `OBJ_FRONT_OD = 36.90 − FIT_PRESS = 36.75`, gauged in **PLA on a
+0.60 nozzle at 0.30 layers**.
+
+> **That reading is now stale.** The printer has moved to 0.40 / 0.20. A
+> delivered bore is as much a property of the nozzle as of the material — a
+> 0.60 nozzle undersizes a hole by roughly 0.20–0.35 mm, a 0.40 by roughly
+> 0.10–0.20 — so the shift is larger than the entire 0.15 mm design
+> clearance. The press fit will have become a slip fit.
+>
+> `params.py` now carries `CAL_NOZZLE` / `CAL_LAYER` alongside
+> `CAL_MATERIAL`, and the build summary prints
+> `*** CALIBRATION STALE - RE-GAUGE ***` until they agree. Print
+> `05_gauge_shroud_regauge04`, read it, set `OBJ_FRONT_OD` and then set
+> `CAL_NOZZLE = 0.40`, `CAL_LAYER = 0.20`.
 
 Worth noting: that is **1.3 mm under** the AN/PVS-14 nominal this project
 started from. The nominal was a starting point and it was wrong, which is

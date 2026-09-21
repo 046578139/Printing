@@ -38,8 +38,10 @@ SETS = {
     "killflash-fit": dict(
         what="kill flash OD, press into the front recess",
         how="Count the dimples. Largest that seats with thumb pressure and "
-            "does not drop out inverted wins -> put it in KF_OD.",
-        values=frange(32.3, 33.1, 0.2),
+            "does not drop out inverted wins -> put it in KF_OD. Ranged for "
+            "a 0.40 nozzle, where the recess prints larger and the disc "
+            "smaller than at 0.60, so the fit runs looser both ways.",
+        values=frange(32.5, 33.3, 0.2),
         name=lambda v, i: "kf_od_%05.2f" % v,
         build=lambda v, i: killflash.build(od=v, marks=i + 1),
     ),

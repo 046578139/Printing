@@ -53,6 +53,23 @@ OBJ_COLLAR_LEN  = 12.00   # [VERIFY] usable straight length there
 CAL_MATERIAL    = "PLA"      # material of the gauge that set OBJ_FRONT_OD
 PRINT_MATERIAL  = "PLA"      # material you are printing the parts in NOW
 
+# ...and the hotend it was gauged on. A delivered bore is as much a property
+# of the nozzle as of the material: a 0.60 nozzle undersizes a hole by
+# roughly 0.20-0.35 mm, a 0.40 by roughly 0.10-0.20. Moving between them
+# shifts every fit by more than the whole design clearance, so a calibration
+# taken on one hotend is simply not valid on the other.
+CAL_NOZZLE      = 0.60       # OBJ_FRONT_OD = 36.75 was read on a 0.60 nozzle
+CAL_LAYER       = 0.30
+# Set these to NOZZLE / LAYER once the fine ladder has been re-read on the
+# new hotend, and BORE_BIAS goes back to being exactly zero.
+
+
+def calibration_is_stale() -> bool:
+    """True when the fit numbers were taken on a different setup."""
+    return (abs(CAL_NOZZLE - NOZZLE) > 1e-9
+            or abs(CAL_LAYER - LAYER) > 1e-9
+            or CAL_MATERIAL != PRINT_MATERIAL)
+
 # How much must be ADDED to a modelled bore to land the same DELIVERED bore
 # as PLA Basic. More shrinkage -> smaller delivered bore -> positive number.
 #
@@ -123,14 +140,20 @@ LINER_T         = 0.00
 # this project is sized off it, so changing nozzle and rebuilding is the
 # supported way to move between machines - editing feature sizes by hand is
 # not.
-NOZZLE          = 0.60
-LAYER           = 0.30
+NOZZLE          = 0.40
+LAYER           = 0.20
+
+# What actually limits a thin feature is the EXTRUSION WIDTH, not the nozzle
+# bore. Bambu defaults a 0.40 nozzle to 0.42 and a 0.60 to about 0.62, so
+# sizing off the nozzle alone is slightly optimistic. Read this off the
+# slicer's "Default" line width and keep it honest.
+LINE_WIDTH      = 0.42
 
 # A single-extrusion wall has to be at least ~1.1x the nozzle or the slicer
 # refuses it and the feature silently disappears. The first kill flash used
 # 0.45 mm cells on a 0.60 nozzle - 75% of nozzle diameter - and every cell
 # wall was dropped. The part came off the plate as a bare rim.
-THIN_WALL       = round(NOZZLE * 1.25, 2)   # reliable single pass
+THIN_WALL       = round(LINE_WIDTH * 1.20, 2)  # reliable single pass
 WALL_MIN        = round(NOZZLE * 3, 2)      # 3 perimeters, load-bearing
 WALL_STD        = round(NOZZLE * 6, 2)      # 6 perimeters, structural
 # A deboss or emboss needs 3 layers to read cleanly, not 2.
@@ -396,7 +419,8 @@ def set_nozzle(nozzle: float, layer: float = None) -> None:
     g["NOZZLE"] = nozzle
     if layer is not None:
         g["LAYER"] = layer
-    g["THIN_WALL"] = round(nozzle * 1.25, 2)
+    g["LINE_WIDTH"] = round(nozzle * 1.05, 2)
+    g["THIN_WALL"] = round(g["LINE_WIDTH"] * 1.20, 2)
     g["WALL_MIN"] = round(nozzle * 3, 2)
     g["WALL_STD"] = round(nozzle * 6, 2)
     g["DETAIL_DEPTH"] = round(g["LAYER"] * 3, 2)
@@ -412,7 +436,11 @@ def summary() -> str:
     return "\n".join([
         "  objective front OD (verify) : %6.2f" % OBJ_FRONT_OD,
         "  objective collar OD (verify): %6.2f" % OBJ_COLLAR_OD,
-        "  calibrated in / printing in : %s / %s" % (CAL_MATERIAL, PRINT_MATERIAL),
+        "  calibrated on / printing on : %s %.2f/%.2f  ->  %s %.2f/%.2f%s" % (
+            CAL_MATERIAL, CAL_NOZZLE, CAL_LAYER,
+            PRINT_MATERIAL, NOZZLE, LAYER,
+            "   *** CALIBRATION STALE - RE-GAUGE ***"
+            if calibration_is_stale() else ""),
         "  bore bias                   : %+6.2f%s" % (
             BORE_BIAS,
             "" if CAL_MATERIAL == PRINT_MATERIAL
