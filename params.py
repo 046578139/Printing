@@ -292,7 +292,7 @@ KF_THICK        = KF_RECESS_LEN - KF_SINK
 # came off the plate as a bare rim. Two full perimeters is the smallest wall
 # that is not at the mercy of thin-wall detection.
 KF_WALL         = THIN_WALL
-KF_CELL_AF      = 4.20
+KF_CELL_AF      = 4.20   # [CONFIRMED] also the cap's hex, so the two match
 KF_RIM          = round(NOZZLE * 2, 2)
 KF_CHAMFER      = 0.50    # TOP edge only - insert chamfer-first (see docs)
 # Open-area fraction ~= (AF/(AF+wall))^2 ~= 0.68
@@ -488,6 +488,10 @@ LAP_EDGE        = PINCH_EDGE
 # never been gauged, only triangulated. A 6 mm gap closes 6/pi = 1.91 mm of
 # diameter, so ONE part covers 37.20 down to 35.29 - wider than the whole
 # plausible spread. There is nothing to get wrong and nothing to sweep.
+# CONFIRMED on hardware. Three rungs went on - 37.20, 39.20, 41.20 - and the
+# 37.20 is the one that fits the locking collar; the other two were scrapped.
+# That brackets the seat at 35.29-37.20 without ever having gauged it, which
+# is exactly what the 6 mm gap was for.
 CINCH_SLIP      = 0.30    # bore runs OVER the seat; the tie takes up the rest
 CINCH_BORE      = OBJ_COLLAR_OD + CINCH_SLIP + BORE_BIAS
 CINCH_GAP       = 6.00    # closes 6/pi = 1.91 mm of diameter
@@ -571,14 +575,21 @@ TAB_UNDERCUT    = 1.80
 # raised cell is an isolated first-layer island and the floor around it is a
 # long bridge, which is exactly what the first printed cap showed.
 TEX_DIMPLE      = True
-TEX_CELL        = 2.60
+# The cap's hex matches the KILL FLASH's cell, not a size of its own. Matching
+# the cell is what makes the two read as one object; the land between them is
+# free to differ, because the kill flash's is a structural wall carrying the
+# grid and the cap's is just a surface ridge between two shallow pockets.
+TEX_CELL        = KF_CELL_AF
+TEX_FIELD_R     = CAP_OD / 2 - 3.20   # hex field radius; stays clear of the
+                                      # cord bosses and the thumb tab
+TEX_MARK_CLEAR  = 2.20                # clean space kept around the mark
 TEX_DEPTH       = DETAIL_DEPTH
 TEX_WALL        = round(NOZZLE * 1.6, 2)
 
 # Centre mark. Generic chevron/mountain deboss - swap or disable freely.
 MARK_ENABLE     = True
 MARK_TRACED     = True    # use the traced artwork in lib/mark_data.py
-MARK_H          = 18.00   # sized by HEIGHT - the glyph is tall and narrow,
+MARK_H          = 22.00   # sized by HEIGHT - the glyph is tall and narrow,
                           # and what constrains it is the 19 mm clear band
                           # between the two grip panels, not the cap width
 MARK_W          = 18.00   # only used by the fallback chevron
@@ -625,6 +636,7 @@ def set_nozzle(nozzle: float, layer: float = None) -> None:
     g["KF_RIM"] = round(nozzle * 2, 2)
     g["TEX_DEPTH"] = g["DETAIL_DEPTH"]
     g["TEX_WALL"] = round(nozzle * 1.6, 2)
+    g["TEX_CELL"] = g["KF_CELL_AF"]
     g["MARK_DEPTH"] = g["DETAIL_DEPTH"]
     g["GAUGE_TEXT_D"] = g["DETAIL_DEPTH"]
 

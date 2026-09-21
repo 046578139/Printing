@@ -22,8 +22,8 @@ the decorated face gets the plate finish.
 import params as P
 from lib.solids import (circle2d, rect2d, fillet2d, round2d, poly, cyl, box,
                         union, prism_chamfered, bore_lead_in, SEG)
-from lib.patterns import (grip_panel, grip_dimples, chevron_mark,
-                          traced_mark)
+from lib.patterns import (grip_panel, grip_dimples, hex_dimple_disc,
+                          chevron_mark, traced_mark, traced_mark_2d)
 
 TAB_Y_OUT = -(P.CAP_OD / 2.0 + P.TAB_PROJ)
 TAB_Y_IN  = -(P.CAP_OD / 2.0 - 5.0)
@@ -82,30 +82,34 @@ def build():
                                  TAB_Y_OUT + 2.5,
                                  P.TAB_UNDERCUT - SCOOP_R]))
 
-    # Grip texture. DIMPLES, not pips - see grip_dimples. The first printed
-    # cap came off with squashed cells and ropey bridge lines across the
-    # panel floors, because pips are isolated first-layer islands and the
-    # floor between them is one long bridge over air. Dimples have neither.
-    clip = prof.offset(-2.0)
-    tex = grip_dimples if P.TEX_DIMPLE else grip_panel
-    for sy in (1.0, -1.0):
-        panel = tex(PANEL_W, PANEL_H, P.TEX_DEPTH + 0.2,
-                    P.TEX_CELL, P.TEX_WALL)
-        panel = panel.translate([0.0, sy * PANEL_Y, P.CAP_T - P.TEX_DEPTH])
-        cuts.append(panel ^ clip.extrude(P.CAP_T + 2.0))
-
-    # Centre mark. Traced artwork by default (see tools/trace_mark.py);
-    # chevron_mark is still there for anyone who wants a generic one.
+    # Centre mark first: the hex field has to know where to leave space.
     #
-    # It is DEBOSSED, and printed front-face-down that means its floor is a
-    # ceiling bridged over air. That is fine here and was not fine for the
-    # chevron: a glyph is a set of 1.5-3 mm strokes, so every span is short,
-    # where an 18 mm solid triangle was one long sagging bridge.
+    # DEBOSSED, and printed front-face-down that means its floor is a ceiling
+    # bridged over air. That is fine for a glyph and was not fine for the
+    # chevron it replaced: a glyph is a set of 1.5-3 mm strokes, so every span
+    # is short, where an 18 mm solid triangle was one long sagging bridge.
+    mark2d = None
     if P.MARK_ENABLE:
-        mark = (traced_mark(P.MARK_DEPTH + 0.2, P.MARK_H)
-                if P.MARK_TRACED else
-                chevron_mark(P.MARK_W, P.MARK_DEPTH + 0.2))
-        cuts.append(mark.translate([0.0, 0.0, P.CAP_T - P.MARK_DEPTH]))
+        if P.MARK_TRACED:
+            mark2d = traced_mark_2d(P.MARK_H)
+            cuts.append(mark2d.extrude(P.MARK_DEPTH + 0.2)
+                        .translate([0.0, 0.0, P.CAP_T - P.MARK_DEPTH]))
+        else:
+            cuts.append(chevron_mark(P.MARK_W, P.MARK_DEPTH + 0.2)
+                        .translate([0.0, 0.0, P.CAP_T - P.MARK_DEPTH]))
+
+    # Grip texture: ONE hex field across the whole face, at the kill flash's
+    # cell size, rather than two rectangular panels. DIMPLES, not pips - the
+    # first printed cap came off with squashed cells and ropey bridge lines
+    # across both panel floors, because a raised cell is an isolated
+    # first-layer island when the face prints downward and the floor around
+    # it is one long bridge. Dimples have neither.
+    clip = prof.offset(-2.0)
+    field = hex_dimple_disc(P.TEX_FIELD_R, P.TEX_DEPTH + 0.2,
+                            P.TEX_CELL, P.TEX_WALL,
+                            keepout=mark2d, keepout_clear=P.TEX_MARK_CLEAR)
+    field = field ^ clip.extrude(P.CAP_T + 2.0)
+    cuts.append(field.translate([0.0, 0.0, P.CAP_T - P.TEX_DEPTH]))
 
     return part - union(cuts)
 

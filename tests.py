@@ -904,15 +904,34 @@ def test_mark():
     w, h = traced_mark_size(P.MARK_H)
     check(abs(h - P.MARK_H) < 1e-6, "mark height is %.2f, not %.2f" % (h, P.MARK_H))
 
-    # It has to fit the clear band between the two grip panels, which is what
-    # actually constrains it - the glyph is tall and narrow, so the cap's
-    # width is never the limit.
-    band = 2.0 * (capmod.PANEL_Y - capmod.PANEL_H / 2.0)
-    check(h < band,
-          "mark is %.2f mm tall but the clear band between the grip panels is "
-          "only %.2f mm - they overlap" % (h, band))
-    check(band - h >= 0.5,
-          "only %.2f mm between the mark and the grip panels" % (band - h))
+    # It has to sit inside the hex field, which now covers the whole face.
+    # The glyph is tall and narrow, so its HEIGHT against the field radius is
+    # the binding constraint and the cap's width never is.
+    check(h / 2.0 < P.TEX_FIELD_R,
+          "mark is %.2f mm tall but the hex field is only %.2f mm in radius - "
+          "the glyph runs off the textured area" % (h, 2 * P.TEX_FIELD_R))
+    check(P.TEX_FIELD_R - h / 2.0 >= 2.0,
+          "only %.2f mm between the top of the mark and the edge of the field"
+          % (P.TEX_FIELD_R - h / 2.0))
+    check(P.TEX_MARK_CLEAR >= P.TEX_CELL / 2.0,
+          "%.2f mm of keep-out around the mark is under half a %.2f cell - "
+          "hexes will crowd the strokes"
+          % (P.TEX_MARK_CLEAR, P.TEX_CELL))
+
+    # The field has to stay clear of the cord bosses and the thumb tab, both
+    # of which carry load and neither of which wants a dimple in it.
+    # TEX_FIELD_R already bounds the cells themselves - hex_dimple_disc emits
+    # whole cells only and tests centre + circumradius - so the field's
+    # material reaches exactly TEX_FIELD_R and no further.
+    check(P.TEX_FIELD_R < P.CORD_RADIUS - P.CORD_HOLE / 2.0,
+          "the hex field reaches r=%.2f and the cord holes start at r=%.2f"
+          % (P.TEX_FIELD_R, P.CORD_RADIUS - P.CORD_HOLE / 2.0))
+
+    # And the cell must MATCH the kill flash, which is the whole point of
+    # putting it there.
+    check(abs(P.TEX_CELL - P.KF_CELL_AF) < 1e-9,
+          "cap hex is %.2f and the kill flash's is %.2f - they will read as "
+          "two different objects" % (P.TEX_CELL, P.KF_CELL_AF))
 
     # The built mark comes out up to one smoothing radius under its declared
     # size, because round2d blunts the glyph's pointed tips. That is the

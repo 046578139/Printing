@@ -136,6 +136,48 @@ def grip_dimples(width: float, height: float, depth: float, cell: float,
     return _hex_union(centres, cell).extrude(depth)
 
 
+def hex_dimple_disc(radius: float, depth: float, cell: float, wall: float,
+                    keepout=None, keepout_clear: float = 0.0) -> Manifold:
+    """A full circular field of hex dimples, with an optional keep-out.
+
+    Same lattice as the kill flash, so the cap reads as part of the same
+    object rather than a lid that happens to be on it - matching the CELL is
+    what does that, and the land between cells is free to differ because one
+    is a structural wall and the other is a surface ridge.
+
+    Only WHOLE cells are emitted (hex_centres sees to that) and any cell that
+    would come within `keepout_clear` of the keep-out is dropped, so the mark
+    sits in clean space instead of having hexes crowding its strokes.
+    """
+    cr = cell / math.sqrt(3.0)
+    # Grow the keep-out by the clearance AND the cell's circumradius, so the
+    # test can then be a simple "is this centre inside it?" and still keep the
+    # whole cell clear.
+    #
+    # Tested against the SHAPE, not its bounding box. A glyph's box is most of
+    # the field, so a box test empties a wide rectangular band through the
+    # middle of the cap; testing the outline lets the hexes follow the letter.
+    # It costs one tiny 2D intersection per candidate cell, of which there are
+    # under a hundred.
+    grown = None
+    if keepout is not None:
+        grown = keepout.offset(keepout_clear + cr, JoinType.Round)
+        gb = grown.bounds()
+
+    def inside(x, y):
+        if math.hypot(x, y) + cr > radius:
+            return False
+        if grown is not None:
+            if gb[0] <= x <= gb[2] and gb[1] <= y <= gb[3]:      # cheap reject
+                probe = rect2d(0.02, 0.02).translate((x, y))
+                if not (grown ^ probe).is_empty():
+                    return False
+        return True
+
+    centres = hex_centres(cell, wall, radius * 2.0, inside)
+    return _hex_union(centres, cell).extrude(depth)
+
+
 def chevron_mark(width: float, depth: float) -> Manifold:
     """Generic mountain mark: a solid peak with a notch cut out of its base.
 
@@ -189,6 +231,17 @@ def pinch_tab_2d(r_out: float, proj: float, w: float, head_d: float,
     return round2d(stem + head, round_r)
 
 
+def traced_mark_2d(height: float = None, smooth: float = 0.12) -> CrossSection:
+    """The mark's 2D profile. Separated out so the hex field can be told
+    where to leave space without rebuilding the glyph."""
+    from lib import mark_data
+    scale = 1.0 if height is None else height / mark_data.MARK_HEIGHT
+    quads = [np.array([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dtype=float) * scale
+             for x0, y0, x1, y1 in mark_data.RUNS]
+    cs = CrossSection(quads, FillRule.Positive)
+    return round2d(cs, smooth) if smooth > 0 else cs
+
+
 def traced_mark(depth: float, height: float = None, smooth: float = 0.12):
     """The cap's centre mark, from the traced artwork in lib/mark_data.py.
 
@@ -202,14 +255,7 @@ def traced_mark(depth: float, height: float = None, smooth: float = 0.12):
     this is purely to keep the vertex count sane; it is not doing anything
     the printer could otherwise see.
     """
-    from lib import mark_data
-    scale = 1.0 if height is None else height / mark_data.MARK_HEIGHT
-    quads = [np.array([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dtype=float) * scale
-             for x0, y0, x1, y1 in mark_data.RUNS]
-    cs = CrossSection(quads, FillRule.Positive)
-    if smooth > 0:
-        cs = round2d(cs, smooth)
-    return cs.extrude(depth)
+    return traced_mark_2d(height, smooth).extrude(depth)
 
 
 def traced_mark_size(height: float = None) -> tuple:

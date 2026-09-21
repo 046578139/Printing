@@ -93,6 +93,10 @@ SETS = {
         how="Slide it on, run a 3.6 mm zip tie round the channel, pull it "
             "tight. Take the rung whose bore just clears your seat; the tie "
             "takes up whatever is left. Bore is moulded into both cord ears.",
+        # 37.20 is the one that fits; 39.20 and 41.20 were printed, tried and
+        # scrapped. Kept in the ladder only because the seat has still never
+        # been gauged - if a second unit measures differently, the rungs are
+        # here. Print 37.20 alone unless you have reason not to.
         values=[37.2, 39.2, 41.2],
         name=lambda v, i: "cinch_%05.2f" % v,
         build=lambda v, i: cinchcollar.build(bore=v, label="%.1f" % v),

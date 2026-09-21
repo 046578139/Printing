@@ -180,8 +180,7 @@ def _ear(angle: float, bore: float, thick: float,
     band = (circle2d(2 * r_rim, SEG) - circle2d(2 * r_b, SEG)) \
         ^ _sector(60.0, 4 * r_rim, -30.0)
     ear = round2d(prof + band, P.CINCH_ROUND).extrude(thick)
-    ear = ear - cyl(thick + 2.0, P.CORD_HOLE, seg=48) \
-        .translate([P.CORD_RADIUS, 0.0, -1.0])
+    # NOTE: the cord hole is NOT cut here. See build().
     if label:
         txt = text_2d(label, 2.40)
         if not txt.is_empty():
@@ -214,9 +213,21 @@ def build(bore: float = None, gap: float = None, label: str = None,
         .extrude(height + 4.0).translate([0.0, 0.0, -2.0])
     part = part - slot.rotate([0, 0, P.CINCH_GAP_AT - 90.0])
 
-    # Re-cut the bore last: the ears overlap into it.
-    part = part - cyl(height + 4.0, bore, seg=SEG).translate([0, 0, -2.0])
-    return part
+    # Re-cut the bore AND the cord holes last. Both have to come after the
+    # union, for the same reason: the band and the ears overlap each other,
+    # so anything cut from one before they are joined is filled straight back
+    # in by the other.
+    #
+    # The cord hole sits at a FIXED radius while the band's rim grows with
+    # the bore. Cut inside _ear(), the hole measured 3.92 mm round at a 37.20
+    # bore, 3.70 at 39.20 and 2.70 at 41.20 - the band ate the inner side of
+    # it and left a D. Every one of those still passed topology, volume and
+    # a probe down the hole's centre.
+    cuts = [cyl(height + 4.0, bore, seg=SEG).translate([0, 0, -2.0])]
+    for x in (P.CORD_RADIUS, -P.CORD_RADIUS):
+        cuts.append(cyl(height + 4.0, P.CORD_HOLE, seg=48)
+                    .translate([x, 0.0, -2.0]))
+    return part - union(cuts)
 
 
 META = dict(
