@@ -236,6 +236,35 @@ SNAP_LEADIN_D   = 1.20    # radial depth of that ramp
 SNAP_INTERF     = 2.00
 SNAP_BORE       = OBJ_COLLAR_OD - SNAP_INTERF + BORE_BIAS
 
+# --------------------------------------------------------------------------
+# 01d  LEVER COLLAR  -- circlip-style, opened by hand
+# --------------------------------------------------------------------------
+# The push-on ring above is limited to ~230 deg of wrap because the BARREL
+# has to force the gap open, and the barrel must pass the chord between the
+# tips. Opening the ring by hand removes that limit entirely: expand it,
+# slide it on axially, release. The gap then only has to open by
+# pi x expansion, which barely changes with wrap - so the ring can wrap much
+# further, capture much better, and still take LESS strain to fit.
+#
+#   290 deg, axial:  gap opens 7.85 mm, 0.70 % install strain,  ~9 N at the tips
+#   230 deg, radial: gap opens 5.65 mm, 0.75 % install strain, ~13 N
+#
+# The catch: at this wrap it CANNOT be pushed on radially. There has to be a
+# clear axial path onto the barrel. Coming from the front that means over the
+# objective bezel, which is the smaller diameter, so it should be fine - but
+# it means the shroud comes off before the collar does.
+SNAP_LEVER_WRAP   = 290.00
+SNAP_LEVER_INTERF = 2.00   # prototype value, as SNAP_INTERF above
+SNAP_LEVER_CLEAR  = 0.50   # extra expansion so it slides past the step
+SNAP_LEVER_BORE   = OBJ_COLLAR_OD - SNAP_LEVER_INTERF + BORE_BIAS
+
+# Finger paddles at the two tips. Pinch and spread to expand the ring.
+LEVER_PROJ      = 9.00    # how far the paddle reaches past the band OD
+LEVER_W         = 5.00    # stem width, tangential
+LEVER_PAD_W     = 9.50    # head width - this is what your fingertip sits on
+LEVER_PAD_T     = 3.50    # head thickness, radial
+LEVER_ROUND     = 1.60
+
 # Prototype-only wide-gap collar. The production gap of 2.60 mm is worth
 # only 0.83 mm of diameter range, which is fine once OBJ_COLLAR_OD is known
 # and useless before it. These numbers clamp anywhere from 42.20 down to

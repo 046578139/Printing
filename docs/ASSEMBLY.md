@@ -81,6 +81,40 @@ your own hardware.
 | Parts to lose | 2 | 0 |
 | Ages by | loosening you can fix | creeping you cannot |
 
+### Three mechanisms, not two
+
+`01d` was added after seeing how the BCO recorder mount retains — a ring you
+open with your fingers rather than one the hardware forces open. That turns
+out not to be a styling choice; it changes what the ring is allowed to be.
+
+A **push-on** ring has to let the barrel through the chord between its tips,
+and that chord shrinks fast as the wrap grows — past about 240° the barrel
+simply cannot force the gap wide enough. That is what capped `01c` at 230°.
+
+Open it **by hand** and slide it on axially, circlip fashion, and the gap
+only has to open by `π × expansion`, which barely changes with wrap. The
+constraint disappears:
+
+| Collar | Hardware | Tools | Wrap | Fitting | Gap opens | Install strain | Force | Seated |
+|---|---|---|---|---|---|---|---|---|
+| `01`/`01b` screw | M3 + nut | hex key | 360° | clamp down | — | — | — | — |
+| `01c` push-on C-ring | none | none | 230° | push straight on radially | 5.65 mm | 0.75 % | 13 N | 0.40 % |
+| `01d` lever C-ring | none | none | 290° | expand and slide on axially | 7.85 mm | 0.70 % | 9 N | 0.40 % |
+
+So `01d` captures 60° more of the circumference than `01c` *and* takes less
+strain and less force to fit. It is strictly the better ring — with one
+condition attached.
+
+**It cannot be pushed on radially.** There has to be a clear axial path onto
+the barrel. From the front that means over the objective bezel, which is the
+smaller diameter, so it should be fine — but it does mean the kill flash
+housing comes off before the collar does. If your barrel has no axial
+approach, `01c` is the one that works.
+
+To fit `01d`: pinch the two paddles, spread them until the bore clears the
+barrel, slide it into place, release. About 9 N at the paddles — firm, not
+a struggle.
+
 ### The snap ring's numbers
 
 Wrap is 230°, so it captures well past the equator. The barrel has to pass

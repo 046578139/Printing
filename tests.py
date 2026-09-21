@@ -249,6 +249,63 @@ def test_collar_snap():
           (0.0, P.SNAP_BORE / 2 + 1.5, 5.5), True)
 
 
+def test_collar_lever():
+    import math as _m
+    m = snapcollar.build_lever()
+    topology(m, "collar_lever", expect_genus=2)
+
+    check(P.SNAP_LEVER_WRAP > P.SNAP_WRAP,
+          "the lever collar's whole point is more wrap than the push-on "
+          "version (%.0f vs %.0f)" % (P.SNAP_LEVER_WRAP, P.SNAP_WRAP))
+    check(P.SNAP_LEVER_WRAP < 330.0,
+          "%.0f deg leaves too little gap to get a finger in"
+          % P.SNAP_LEVER_WRAP)
+
+    ax = snapcollar.mechanics(mode="axial", wrap=P.SNAP_LEVER_WRAP,
+                              interference=P.SNAP_LEVER_INTERF)
+    rad = snapcollar.mechanics(mode="radial")
+
+    # The reason this design exists: opening it by hand beats letting the
+    # barrel force it, on strain AND on force, despite far more wrap.
+    check(ax["install"] <= rad["install"],
+          "lever install strain %.2f%% is worse than the push-on's %.2f%% - "
+          "the extra wrap is not paying for itself"
+          % (ax["install"] * 100, rad["install"] * 100))
+    check(ax["install"] < 0.015,
+          "lever install strain %.2f%% exceeds PLA's ~1.5%% limit"
+          % (ax["install"] * 100))
+
+    # It has to be openable by hand but not floppy.
+    check(5.0 < ax["tip_force"] < 45.0,
+          "%.0f N at the paddles is outside what fingers do comfortably"
+          % ax["tip_force"])
+
+    # At this wrap it CANNOT be pushed on radially - make sure nobody
+    # quietly changes the wrap and reintroduces that assumption.
+    r_at_wrap = snapcollar.mechanics(mode="radial", wrap=P.SNAP_LEVER_WRAP,
+                                     interference=P.SNAP_LEVER_INTERF)
+    check(r_at_wrap["install"] > ax["install"] * 1.5,
+          "radial and axial install are too close at %.0f deg - the axial "
+          "story no longer holds" % P.SNAP_LEVER_WRAP)
+
+    # Paddles must not foul each other, or the ring cannot close.
+    r_out = P.SNAP_LEVER_BORE / 2 + P.COL_WALL
+    gap = 360.0 - P.SNAP_LEVER_WRAP
+    off = _m.degrees((P.LEVER_W / 2.0) / r_out)
+    sep = _m.radians(gap - 2 * off)
+    r_head = r_out + P.LEVER_PROJ - P.LEVER_PAD_T / 2
+    clear = 2 * r_head * _m.sin(sep / 2) - P.LEVER_PAD_W
+    check(clear > 4.0,
+          "only %.1f mm between the paddle heads - they will collide" % clear)
+
+    probe(m, "lever ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "lever ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "lever crown solid",
+          (0.0, P.SNAP_LEVER_BORE / 2 + 1.5, 5.5), True)
+    probe(m, "lever gap open at 6",
+          (0.0, -(P.SNAP_LEVER_BORE / 2 + 1.5), 5.5), False)
+
+
 def test_shroud():
     m = shroud.build()
     topology(m, "shroud", expect_genus=1)
@@ -347,7 +404,8 @@ def test_cap():
 
 def main():
     for fn in (test_interfaces, test_collar, test_collar_proto,
-               test_collar_snap, test_shroud, test_killflash, test_cap):
+               test_collar_snap, test_collar_lever, test_shroud,
+               test_killflash, test_cap):
         name = fn.__name__.replace("test_", "")
         before = len(FAILS)
         fn()
