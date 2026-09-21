@@ -8,16 +8,17 @@ retained with 1/8 in shock cord.
 
 > ## Read this first
 >
-> **Front bezel: bracketed at 36.75** — the coarse gauge showed modelled
-> bore 36.65 would not go on and 37.15 went on loose. That is 1.3 mm under
-> the AN/PVS-14 nominal this project started from. Confirm it with the
-> 0.10 mm fine ladder before printing a set.
+> **Front bezel: confirmed at 36.75 in PLA.** The fine ladder picked
+> modelled bore 36.90, mid-ladder. That is 1.3 mm under the AN/PVS-14
+> nominal this project started from — the nominal was wrong, which is
+> exactly why the gauge exists. Valid in PLA only; re-gauge in the
+> production filament.
 >
-> **Collar barrel: still unverified**, and now suspect for the same reason.
-> The coarse ladder may not have bracketed it. Do not print a collar until
-> that number is read off a gauge.
+> **Collar barrel: still unverified**, and suspect for the same reason.
+> Do not print a collar until that number is read off a gauge.
 >
-> → **[docs/MEASUREMENTS.md](docs/MEASUREMENTS.md)**
+> → **[docs/CALIBRATION.md](docs/CALIBRATION.md)** ·
+> **[docs/MEASUREMENTS.md](docs/MEASUREMENTS.md)**
 
 ## The parts
 
@@ -108,7 +109,7 @@ tests.py            geometry probes + cross-part interface assertions
 render.py           headless preview renderer (no GL)
 lib/                solids, patterns, seven-segment text
 parts/              one module per part
-docs/               MEASUREMENTS, ASSEMBLY, PRINTING
+docs/               CALIBRATION, MEASUREMENTS, ASSEMBLY, PRINTING
 stl/                output
 ```
 

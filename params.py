@@ -25,10 +25,11 @@ All units are millimetres, all angles degrees.
 # !! HARDWARE. Confirm them with the printed gauges before committing to a
 # !! full set. See docs/MEASUREMENTS.md.
 
-OBJ_FRONT_OD    = 36.75   # [BRACKETED] from the coarse gauge: modelled bore 36.65
-                          # would not go on, 37.15 went on loose. Provisional
-                          # centre 36.90 => 36.90 - FIT_PRESS. Confirm with the
-                          # 0.10 mm fine ladder before printing a full set.
+OBJ_FRONT_OD    = 36.75   # [CONFIRMED in PLA] fine ladder (0.10 steps) picked
+                          # modelled bore 36.90, mid-ladder rather than at an
+                          # edge. 36.90 - FIT_PRESS = 36.75. Valid in PLA only -
+                          # re-gauge in the production filament. See
+                          # docs/CALIBRATION.md.
 OBJ_FRONT_LEN   = 10.00   # [VERIFY] usable straight length of that bezel
 OBJ_COLLAR_OD   = 41.00   # [STILL UNVERIFIED - and now suspect. The front bezel
                           # came in 1.3 mm under its PVS-14 nominal, so this one

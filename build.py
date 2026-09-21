@@ -10,6 +10,7 @@ the kind of thing you only notice after a two-hour print.
     python3 build.py gauge --step 0.1     # fine sweep once you are close
     python3 build.py gauge --nominal 39.2 --step 0.1 --count 7
     python3 build.py gauge:shroud --step 0.1 --count 7   # one ladder only
+    python3 build.py gauge:shroud --tag nylon --step 0.05 --count 7
 """
 
 import os
@@ -82,13 +83,19 @@ def build_one(name, man, expect_genus, meta, fname):
                 meta=meta)
 
 
+# Flags that carry text rather than a number.
+TEXT_OPTS = ("tag",)
+
+
 def parse(argv):
     """Pull --key value flags out of argv, return (names, opts)."""
     names, opts, i = [], {}, 1
     while i < len(argv):
         a = argv[i]
         if a.startswith("--"):
-            opts[a[2:]] = float(argv[i + 1]); i += 2
+            k, v = a[2:], argv[i + 1]
+            opts[k] = v if k in TEXT_OPTS else float(v)
+            i += 2
         else:
             names.append(a.lower()); i += 1
     return names, opts
@@ -123,7 +130,8 @@ def main(argv):
             g = gauge.build(nom, fit,
                             count=int(opts["count"]) if "count" in opts else None,
                             step=opts.get("step"))
-            rows.append(build_one("gauge:" + tag, g, None, m, fname))
+            out = fname + ("_" + opts["tag"] if "tag" in opts else "")
+            rows.append(build_one("gauge:" + tag, g, None, m, out))
 
     w = max(len(r["file"]) for r in rows)
     print("\nNVG objective cap set  --  %s\n" % time.strftime("%Y-%m-%d %H:%M"))
