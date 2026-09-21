@@ -15,44 +15,54 @@ you cannot re-buy expires silently.
 
 | Date | Pass | Material | Ladder | Result |
 |---|---|---|---|---|
-| 2026-09-21 | coarse | PLA | 36.15 → 40.15, 0.50 steps | **36.65 would not go on; 37.15 went on loose** → bracketed between them |
-| 2026-09-21 | fine | PLA | 36.60 → 37.20, 0.10 steps | **36.90 wins** — mid-ladder, not at an edge |
+| 2026-09-21 | coarse | PLA, 0.60 nozzle | 36.15 → 40.15, 0.50 steps | 36.65 would not go on; 37.15 went on loose → bracketed |
+| 2026-09-21 | fine | PLA, 0.60 nozzle | 36.60 → 37.20, 0.10 steps | 36.90 — superseded, read on the wrong hotend |
+| 2026-09-21 | **re-gauge** | **PLA, 0.40 nozzle, 0.20 layer** | 36.45 → 37.05, 0.10 steps | **36.85 wins** — mid-ladder, not at an edge |
 | | production | PAHT-CF | 36.85 → 37.15, 0.05 steps | *pending — needs a 2–3 week soak before reading* |
-| | **re-gauge** | **PLA on a 0.40 nozzle** | 36.45 → 37.05, 0.10 steps | *pending — the reading above is not valid on this hotend* |
 
-**In force:** `OBJ_FRONT_OD = 36.90 − FIT_PRESS = 36.75`, gauged in **PLA on a
-0.60 nozzle at 0.30 layers**.
+**In force:** `OBJ_FRONT_OD = 36.85 − FIT_PRESS = 36.70`, gauged in **PLA on
+a 0.40 nozzle at 0.20 layers**. `CAL_NOZZLE` / `CAL_LAYER` now agree with
+`NOZZLE` / `LAYER`, so the build summary no longer flags the calibration as
+stale.
 
-> **That reading is now stale.** The printer has moved to 0.40 / 0.20. A
-> delivered bore is as much a property of the nozzle as of the material — a
-> 0.60 nozzle undersizes a hole by roughly 0.20–0.35 mm, a 0.40 by roughly
-> 0.10–0.20 — so the shift is larger than the entire 0.15 mm design
-> clearance. The press fit will have become a slip fit.
->
-> `params.py` now carries `CAL_NOZZLE` / `CAL_LAYER` alongside
-> `CAL_MATERIAL`, and the build summary prints
-> `*** CALIBRATION STALE - RE-GAUGE ***` until they agree. Print
-> `05_gauge_shroud_regauge04`, read it, set `OBJ_FRONT_OD` and then set
-> `CAL_NOZZLE = 0.40`, `CAL_LAYER = 0.20`.
+Confirmed on hardware: the housing built against this number "slides on and
+is a very tight fit, and fully bottoms out on the top where it should."
 
-Worth noting: that is **1.3 mm under** the AN/PVS-14 nominal this project
+The 0.60 nozzle reading came out 0.05 larger than the 0.40 one, which is the
+right sign and about the right size — a fatter nozzle undersizes a hole
+more, so the winning *ring* has to be labelled larger to deliver the same
+bore. It is worth keeping the superseded row visible for exactly that
+reason: it is the evidence that the provenance columns are doing real work.
+
+Worth noting: this is **1.45 mm under** the AN/PVS-14 nominal this project
 started from. The nominal was a starting point and it was wrong, which is
 the entire reason the gauge exists.
 
 Filament SKU / lot: _________________
 
-### Collar barrel — `OBJ_COLLAR_OD`
+### Collar seat — `OBJ_COLLAR_OD`
 
 | Date | Pass | Material | Ladder | Result |
 |---|---|---|---|---|
-| | coarse | PLA | 37.00 → 43.00, 0.60 steps | *pending* |
+| 2026-09-21 | *triangulated* | — | — | **36.90 assumed**, from the bezel reading — NOT measured |
+| | direct | PLA, 0.40 nozzle | `pinch-bore` sweep, 35.60 → 36.80, 0.30 steps | *pending* |
 
-**Not yet read.** Still sitting on its unverified 41.00, and suspect for the
-same reason the bezel was — do not print a collar against it.
+**Still triangulated, not gauged.** The 36.85 ring was read on the front
+bezel; the collar sits further back, and nothing has yet been put on that
+section of barrel. 36.90 is an inference, and it is the last unverified
+dimension in the set.
 
-Criterion here is different from the bezel: you want the ring that **just
-slides on** with a barely perceptible wobble, not one that presses. The
-screw takes up the rest.
+It is also the one dimension a gauge ring cannot settle on its own. A ring
+tells you what diameter slides on; it cannot tell you how much
+*interference* a spring ring wants in order to hold the cap's orientation
+without being unfittable. So this one is read from the **`pinch-bore`
+sweep** instead of a ladder: print all five, fit each over the bare bezel,
+and keep the largest bore that still cannot be twisted by hand once seated.
+That single plate settles the seat diameter and the grip together.
+
+Criterion, if you do run a plain ladder here: the ring that **just slides
+on** with a barely perceptible wobble — a slip fit, not a press. The spring
+(or the screw, on 01) takes up the rest.
 
 Filament SKU / lot: _________________
 

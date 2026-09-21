@@ -24,15 +24,18 @@ retained with 1/8 in shock cord.
 
 | File | Part | What it does |
 |---|---|---|
-| `stl/01_collar.stl` | Retention collar | Split band clamp, M3 pinch screw. Anchors the shock cord and sets the cap's rotational orientation. **Needs the collar gauge first.** |
-| `stl/01b_collar_proto.stl` | Collar, wide gap | Prototype only. Clamps 42.20 → 38.06 instead of 41.40 → 40.57, so it grips whatever the barrel turns out to be. Needs an M3 × 30 screw. |
-| `stl/01c_collar_snap.stl` | Collar, push-on | Split C-ring, 230° wrap. Pushed straight on; the barrel cams it open. No hardware. |
-| `stl/01d_collar_lever.stl` | Collar, lever | Circlip-style, 290° wrap with finger paddles. Expand by hand, slide on axially. More capture than `01c` for *less* strain and force — [comparison](docs/ASSEMBLY.md#three-mechanisms-not-two). |
+| `stl/01f_collar_lap.stl` | **Collar, lapped — print this one** | The recorder mount's actual mechanism: the band wraps 390° so its two ends lap past each other, each carrying a finger tab. **Squeeze** the tabs together and the lap shortens, which makes the circle bigger. Tabs sit at different heights so they lap past each other rather than colliding. No hardware, no tools — [how it works](docs/ASSEMBLY.md#01f-is-the-one-to-print). **Goes on BEFORE the housing.** |
+| `stl/01e_collar_pinch.stl` | Collar, pinch | Reads closed at 340°, tabs flanking a gap — you **spread** these, not squeeze them. Lowest install strain in the set and no sliding clearance for a slicer to get wrong, so it is the fallback if `01f`'s lap fuses. **Goes on BEFORE the housing.** |
+| `stl/01_collar.stl` | Collar, screw clamp | Split band clamp, M3 pinch screw. The only one that can be fitted *after* the housing, and the only one with a preload you can re-tighten. |
+| `stl/01b_collar_proto.stl` | Collar, wide gap | Prototype only. Opens far enough to clamp anywhere across the plausible range, for use before the collar seat has been gauged. Needs an M3 × 30 screw. |
+| `stl/01c_collar_snap.stl` | Collar, push-on | Split C-ring, 230° wrap. Pushed straight on; the barrel cams it open. Superseded by `01e` — kept because it is the only spring ring that does not need an axial approach. |
+| `stl/01d_collar_lever.stl` | Collar, lever | Circlip-style, 290° wrap with finger paddles. Superseded by `01e`, which does the same job at 340° for less strain and less force. |
 | `stl/02_killflash_housing.stl` | Kill flash housing | Presses onto the objective bezel, carries the kill flash, gives the cap a register to close on. |
 | `stl/03_killflash_insert.stl` | Kill flash | Printed honeycomb. 71 % open area, 39° off-axis cutoff. |
 | `stl/04_flip_cap.stl` | Flip cap | Bungee-retained cover. Cord bosses at 3 and 9, thumb tab at 6, hex grip, centre mark. |
 | `stl/05_gauge_shroud.stl` | Fit gauge | Ring ladder for the housing bore. **Print this first.** |
 | `stl/06_gauge_collar.stl` | Fit gauge | Ring ladder for the collar bore. **Print this first.** |
+| `stl/sweep/lap_*.stl` | Fit sweep | Five `01f` collars stepping 0.30 mm, bore size moulded into each ear. Settles the collar seat *and* the grip on one plate — the last unverified dimension in the set. |
 
 Every part is symmetric about the vertical plane — there is no left and
 right. Print two of each for a binocular.
@@ -53,7 +56,7 @@ and softens around 55–60 °C; an afternoon on a dashboard will destroy it.
 
 ```bash
 python3 build.py        # writes one STL per part into stl/
-python3 tests.py        # 77 geometry and interface checks
+python3 tests.py        # 276 geometry and interface checks
 python3 render.py       # PNG previews into preview/
 ```
 

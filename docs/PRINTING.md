@@ -64,6 +64,8 @@ flash seat.
 
 | Part | Orientation | Why |
 |---|---|---|
+| `01f_collar_lap` | **Rear face down** — already oriented, flat on the plate | Same reason as `01e`, plus: the lap's two sliding clearances (0.40 mm radial, 0.30 mm vertical) are only clearances in *this* orientation. Turn OFF thin-wall detection and gap filling — a slicer that helpfully bridges those two gaps welds the arms together and the ring will not expand at all |
+| `01e_collar_pinch` | **Rear face down** — already oriented, flat on the plate | Cord ears at the bottom so they are not a mid-air overhang. Printed this way the band flexes *within* its layers when you spread the tabs, so installing it loads X-Y strength and never tests layer adhesion — which is the whole reason a printed spring ring works at all |
 | `01_collar` | **Rear face down** — cord ears and clamp lugs on the plate | Ears sit at the bottom so they are not a mid-air overhang; the hex nut pocket is rotated point-up so it bridges itself |
 | `02_killflash_housing` | **Front face down** — register on the plate | Makes the kill flash seat an upward-opening pocket. The only overhang is a 1.3 mm shoulder ledge, which bridges clean |
 | `03_killflash_insert` | **Flat**, either way up | Symmetric |

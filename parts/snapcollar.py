@@ -28,8 +28,9 @@ import math
 import numpy as np
 
 import params as P
-from lib.solids import (tube, cyl, poly, rect2d, fillet2d, round2d, union,
-                        SEG, bore_lead_in, chamfer_outer)
+from lib.solids import (tube, cyl, circle2d, poly, rect2d, fillet2d,
+                        round2d, union, SEG, bore_lead_in, chamfer_outer)
+from lib.patterns import cord_ear_2d, pinch_tab_2d
 from lib.text3d import text_2d
 from manifold3d import Manifold, CrossSection
 
@@ -101,11 +102,12 @@ def _sector(angle: float, r: float, start: float) -> CrossSection:
     return poly(pts)
 
 
-def _ear(angle: float, r_out: float, ear_proj: float,
+def _ear(angle: float, r_out: float, ear_proj: float = None,
          label: str = None) -> Manifold:
-    x0, x1 = r_out - 2.5, r_out + ear_proj
-    prof = fillet2d(rect2d(x1 - x0, P.EAR_W)
-                    .translate(((x0 + x1) / 2.0, 0.0)), P.EAR_FILLET)
+    """Cord ear, shared profile. `ear_proj` is accepted and ignored: the
+    profile reaches CORD_RADIUS by construction, whatever the bore."""
+    prof = cord_ear_2d(r_out, P.CORD_RADIUS, P.EAR_BOSS_D,
+                       P.EAR_STEM_W, P.EAR_ROUND)
     ear = prof.extrude(P.EAR_T)
     hole = cyl(P.EAR_T + 2.0, P.CORD_HOLE, seg=48) \
         .translate([P.CORD_RADIUS, 0.0, -1.0])
@@ -114,25 +116,40 @@ def _ear(angle: float, r_out: float, ear_proj: float,
     # A sweep of five rings 0.4 mm apart is unidentifiable once it is off
     # the plate, so each one carries its own bore size.
     if label:
-        txt = text_2d(label, 2.60)
+        txt = text_2d(label, 2.40)
         if not txt.is_empty():
             ear = ear - txt.rotate(90).extrude(0.8) \
-                .translate([x0 + (x1 - x0) * 0.33, 0.0, P.EAR_T - 0.5])
+                .translate([r_out + 1.0, 0.0, P.EAR_T - P.LAYER * 2])
     return ear.rotate([0, 0, angle])
 
 
-def _paddle(r_out):
-    """Finger paddle: a radial stem with a wider head your fingertip sits on.
+def _paddle(r_out, bore, angle):
+    """Finger paddle: a radial stem with a rounded head your fingertip sits on.
 
     Built at angle 0 and rotated to a tip; the head is what makes the ring
     openable by hand at all, since a bare band this size gives a fingertip
-    nothing to pull against.
+    nothing to pull against. Same generator as the pinch collar's tabs, so
+    there are no square edges anywhere on the outside of the part.
+
+    A slice of the band is folded into the profile before rounding. Without
+    it the paddle is welded onto the band as a separate solid and leaves a
+    sharp notch at the root - which is precisely where the load from
+    spreading the ring enters the band, and so precisely where a flexed part
+    cracks. The slice is redundant material (the band is already there); it
+    is here only so round2d has both sides of the corner to work on.
     """
-    stem = rect2d(P.LEVER_PROJ + 2.0, P.LEVER_W) \
-        .translate((r_out + P.LEVER_PROJ / 2.0 - 1.0, 0.0))
-    head = rect2d(P.LEVER_PAD_T, P.LEVER_PAD_W) \
-        .translate((r_out + P.LEVER_PROJ - P.LEVER_PAD_T / 2.0, 0.0))
-    return round2d(stem + head, P.LEVER_ROUND)
+    prof = pinch_tab_2d(r_out, P.LEVER_PROJ, P.LEVER_W,
+                        P.LEVER_PAD_W, P.LEVER_ROUND).rotate(angle)
+    # The slice must come from the ring AS GAPPED. Taking it from the full
+    # ring re-adds band material inside the gap when the paddle is unioned
+    # on, and at +/-30 degrees either side of two paddles that closed 55 of
+    # the 70 degree gap - a 9 % volume rise that a probe at the gap centre
+    # sailed straight past, because the centre was still open.
+    gap_deg = 360.0 - P.SNAP_LEVER_WRAP
+    ring = (circle2d(2 * r_out, SEG) - circle2d(bore, SEG)) \
+        - _sector(gap_deg, 4 * r_out, 270.0 - gap_deg / 2.0)
+    band = ring ^ _sector(60.0, 4 * r_out, angle - 30.0)
+    return round2d(prof + band, P.PINCH_ROOT_R)
 
 
 def build_lever(bore: float = None, label: str = None):
@@ -157,11 +174,14 @@ def build_lever(bore: float = None, label: str = None):
         .extrude(P.COL_HEIGHT + 4.0).translate([0, 0, -2.0])
     band = band - gap
 
-    # Sit each paddle just inside its tip so it has a full-width root.
+    # Sit each paddle just inside its tip so it has a full-width root. Each
+    # is built already rotated, because its root fillet is cut against the
+    # gapped band at that specific angle.
     off = math.degrees((P.LEVER_W / 2.0) / r_out)
-    pad = _paddle(r_out).extrude(P.COL_HEIGHT)
-    paddles = [pad.rotate([0, 0, 270.0 - gap_deg / 2.0 - off]),
-               pad.rotate([0, 0, 270.0 + gap_deg / 2.0 + off])]
+    paddles = [_paddle(r_out, bore, 270.0 - gap_deg / 2.0 - off)
+               .extrude(P.COL_HEIGHT),
+               _paddle(r_out, bore, 270.0 + gap_deg / 2.0 + off)
+               .extrude(P.COL_HEIGHT)]
 
     part = union([band] + paddles
                  + [_ear(0.0, r_out, ear_proj, label),

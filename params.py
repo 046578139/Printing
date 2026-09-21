@@ -25,11 +25,12 @@ All units are millimetres, all angles degrees.
 # !! HARDWARE. Confirm them with the printed gauges before committing to a
 # !! full set. See docs/MEASUREMENTS.md.
 
-OBJ_FRONT_OD    = 36.75   # [CONFIRMED in PLA] fine ladder (0.10 steps) picked
-                          # modelled bore 36.90, mid-ladder rather than at an
-                          # edge. 36.90 - FIT_PRESS = 36.75. Valid in PLA only -
-                          # re-gauge in the production filament. See
-                          # docs/CALIBRATION.md.
+OBJ_FRONT_OD    = 36.70   # [CONFIRMED in PLA on a 0.40 nozzle] re-gauge ladder
+                          # (0.10 steps) picked modelled bore 36.85.
+                          # 36.85 - FIT_PRESS = 36.70. The 0.60 nozzle had put
+                          # this at 36.75, so the hotend change moved it only
+                          # 0.05 - less than predicted, but measured beats
+                          # estimated. See docs/CALIBRATION.md.
 OBJ_FRONT_LEN   = 13.00   # [CONFIRMED] the bezel inserts the full bore depth
 OBJ_COLLAR_OD   = 36.90   # [TRIANGULATED, not yet gauged] Two oversized test
                           # prints agree: the 39.00 snap ring read ~2 mm loose
@@ -58,8 +59,8 @@ PRINT_MATERIAL  = "PLA"      # material you are printing the parts in NOW
 # roughly 0.20-0.35 mm, a 0.40 by roughly 0.10-0.20. Moving between them
 # shifts every fit by more than the whole design clearance, so a calibration
 # taken on one hotend is simply not valid on the other.
-CAL_NOZZLE      = 0.60       # OBJ_FRONT_OD = 36.75 was read on a 0.60 nozzle
-CAL_LAYER       = 0.30
+CAL_NOZZLE      = 0.40       # 36.85 ring read on the 0.40 nozzle
+CAL_LAYER       = 0.20
 # Set these to NOZZLE / LAYER once the fine ladder has been re-read on the
 # new hotend, and BORE_BIAS goes back to being exactly zero.
 
@@ -107,6 +108,11 @@ BORE_BIAS = BORE_SHIFT[PRINT_MATERIAL] - BORE_SHIFT[CAL_MATERIAL] + BORE_TRIM
 CORD_DIA        = 3.175   # 1/8 in shock cord, nominal
 CORD_HOLE       = 3.90    # free-running clearance hole (cord must slide)
 CORD_KNOT_D     = 8.50    # overhand knot in 1/8 in cord, for clearance pockets
+
+# One boss diameter for every cord anchor in the set. The collar's ears used
+# to be square slabs sitting next to a cap with round bosses, which read as
+# two parts from two different designs. They are now the same profile.
+CORD_BOSS_D     = 8.20
 
 
 # ==========================================================================
@@ -253,7 +259,8 @@ KNURL_ANGLE     = 32.0
 # just under flush; the cap covers it.
 KF_RECESS_D     = SHROUD_APERTURE                  # the front bore, 33.00
 KF_RECESS_LEN   = SHROUD_FLANGE_T + REG_HEIGHT     # depth of that recess
-KF_FIT          = 0.30                             # diametral, press fit
+KF_FIT          = 0.10                             # diametral. Was 0.30 and
+                                                   # read slightly loose on hardware.
 KF_SINK         = 0.20                             # sits this far below flush
 KF_OD           = KF_RECESS_D - KF_FIT
 KF_THICK        = KF_RECESS_LEN - KF_SINK
@@ -338,6 +345,98 @@ LEVER_PAD_W     = 9.50    # head width - this is what your fingertip sits on
 LEVER_PAD_T     = 3.50    # head thickness, radial
 LEVER_ROUND     = 1.60
 
+# --------------------------------------------------------------------------
+# 01e  PINCH COLLAR  -- the one modelled on the recorder mount
+# --------------------------------------------------------------------------
+# A nearly-closed ring with two small tabs flanking a narrow gap. Pull the
+# tabs apart, the ring expands, slide it down over the objective bezel, let
+# go. It grips on its own bore; the tabs are handles, not springs.
+#
+# Arc length is fixed, so growing the bore by X opens the gap by pi*X -
+# independent of wrap angle. That is why this can sit at 340 degrees and
+# still be easier to open than the 230 degree push-on ring:
+#
+#   340 deg, expand 1.30 -> gap opens 4.08 mm, 0.37 % strain, ~5 N at the tabs
+#   230 deg, push-on     -> gap opens 5.65 mm, 0.75 % strain, ~13 N
+#
+# It cannot go on radially at this wrap, so it installs COLLAR FIRST, over
+# the bare bezel, before the housing.
+PINCH_WRAP      = 340.00
+PINCH_INTERF    = 0.90    # free bore this far under the seat; this is the grip
+PINCH_CLEAR     = 0.40    # extra expansion so it slides rather than scrapes
+PINCH_BORE      = OBJ_COLLAR_OD - PINCH_INTERF + BORE_BIAS
+PINCH_GAP_AT    = 90.0    # o'clock position of the gap; 90 = top
+
+PINCH_TAB_PROJ  = 7.00    # how far a tab reaches past the band OD
+PINCH_TAB_W     = 4.20    # stem width
+PINCH_TAB_HEAD  = 6.60    # rounded head - this is what your fingertip pulls on
+PINCH_ROUND     = 1.40
+# Fillet where a tab meets the band. The tabs are handles, but the load you
+# put into them all enters the band through this corner, and a sharp internal
+# corner on a part whose entire job is to flex is a crack waiting for the
+# tenth install. Applied to the whole band+tab profile in one pass, so the
+# ends of the gap get rounded too.
+PINCH_ROOT_R    = 1.50
+PINCH_EDGE      = 0.80    # top edge break; bottom is the plate face, stays flat
+
+
+# --------------------------------------------------------------------------
+# 01f - LAPPED collar. The recorder mount's actual mechanism.
+#
+# The band wraps PAST 360 so the two ends lap over each other, stepped in
+# thickness: the inner arm passes inside the outer one. Each end carries a
+# finger tab, and because the ends have CROSSED, squeezing the two tabs
+# together shortens the lap - and a band of fixed arc length with less lap
+# is a bigger circle. Squeeze to expand.
+#
+# That is the difference from 01e and it is not a detail. On 01e the tabs sit
+# on the band either side of a gap, and expanding the ring moves them APART,
+# so it has to be spread. Put each tab on a crossed free END instead and the
+# motion reverses.
+#
+# The step forces one thing: the INNER arm's tab has to get out past the
+# outer arm. So the outer arm stops half way up the band and the inner arm's
+# tab rides over the top of it. The two tabs end up at different heights,
+# which is exactly why they can lap past each other rather than collide.
+LAP_DEG         = 30.00   # how far the ends lap at rest
+LAP_END_CLEAR   = 2.00    # deg between a free end and the step it retreats
+                          # from, so nothing is butted solid at rest
+LAP_SLIDE       = 0.40    # radial gap between the nested arms
+# NOT an even split. The outer arm is a bare strip over its whole height,
+# while the inner one gets a full-wall flange back above the sliding gap - so
+# an even split leaves the outer arm carrying the squeeze on a third of the
+# section and taking 0.81 % where the rest of the ring sees 0.14 %. Moving
+# 0.20 mm of wall outward and the divide up to 6.5 drops the worst strain to
+# 0.57 % and costs nothing. The inner arm stays above the 1.14 mm that three
+# perimeters need at a 0.40 nozzle - do not thin it further to chase this.
+LAP_ARM_IN      = 1.20    # inner arm: thin only below the split
+LAP_ARM_OUT     = COL_WALL - LAP_SLIDE - LAP_ARM_IN
+LAP_SPLIT_Z     = 6.50    # top of the outer arm
+LAP_SLIDE_Z     = 0.30    # vertical gap the upper flange bridges
+
+LAP_AT          = 90.0    # o'clock position of the lap; 90 = top
+LAP_INTERF      = 0.90    # free bore this far under the seat; this is the grip
+LAP_CLEAR       = 0.40    # extra expansion so it slides rather than scrapes
+LAP_BORE        = OBJ_COLLAR_OD - LAP_INTERF + BORE_BIAS
+
+LAP_TAB_PROJ    = PINCH_TAB_PROJ
+LAP_TAB_W       = PINCH_TAB_W
+LAP_TAB_HEAD    = PINCH_TAB_HEAD
+LAP_ROUND       = PINCH_ROUND
+LAP_ROOT_R      = PINCH_ROOT_R
+LAP_EDGE        = PINCH_EDGE
+
+# Cord ears, on every collar, are now circular bosses blended into the band
+# with a tapered stem - the same profile as the cap's, instead of the square
+# slabs that read as a different part from a different design.
+EAR_BOSS_D      = CORD_BOSS_D
+# Full boss width, NOT a narrowed neck. A stem thinner than the boss puts a
+# waist between the cord hole and the band - which is the smallest section in
+# the whole load path, sitting exactly where the shock cord pulls hardest.
+# The ear now runs straight out from the band at constant width.
+EAR_STEM_W      = CORD_BOSS_D
+EAR_ROUND       = 1.80
+
 # Prototype-only wide-gap collar. The production gap of 2.60 mm is worth
 # only 0.83 mm of diameter range, which is fine once OBJ_COLLAR_OD is known
 # and useless before it. These numbers clamp anywhere from 42.20 down to
@@ -367,7 +466,7 @@ CAP_SKIRT_DEPTH = REG_HEIGHT + 0.40
 CAP_SKIRT_WALL  = 2.20
 
 # Cord bosses at 3 and 9 o'clock, hole fore/aft, knot sits proud on the front.
-CAP_BOSS_D      = 8.20
+CAP_BOSS_D      = CORD_BOSS_D
 CAP_BOSS_PROJ   = CORD_RADIUS + CAP_BOSS_D / 2 - CAP_OD / 2
 CAP_T           = CAP_FACE_T + CAP_SKIRT_DEPTH   # total cap thickness
 

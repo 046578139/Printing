@@ -116,3 +116,35 @@ def chevron_mark(width: float, depth: float) -> Manifold:
     # Rounded generously: at 0.6 mm deep the deboss floor is only a few
     # layers, and sharp internal corners there leave an unclosed seam.
     return round2d(peak - notch, 0.75).extrude(depth)
+
+
+def cord_ear_2d(r_out: float, cord_radius: float, boss_d: float,
+                stem_w: float, round_r: float) -> CrossSection:
+    """Cord anchor profile: a circular boss on a tapered stem, blended.
+
+    Shared by the collars and the cap so every cord anchor in the set is the
+    same shape. The collars used to carry square slabs, which sat next to a
+    cap full of round bosses and read as parts from two different designs.
+
+    `stem_w` should equal `boss_d`: the ear then runs straight out from the
+    band at constant width and the load path from the cord into the band
+    never narrows. A stem thinner than the boss looks neater and puts the
+    smallest section in the part directly under the highest load.
+    """
+    boss = circle2d(boss_d).translate((cord_radius, 0.0))
+    stem = rect2d(cord_radius - r_out + 8.0, stem_w) \
+        .translate(((r_out - 4.0 + cord_radius) / 2.0, 0.0))
+    return round2d(boss + stem, round_r)
+
+
+def pinch_tab_2d(r_out: float, proj: float, w: float, head_d: float,
+                 round_r: float) -> CrossSection:
+    """Finger tab profile: a narrow stem with a rounded head.
+
+    The head is what a fingertip pulls against. Narrow at the root so two of
+    them can sit either side of a 20 degree gap without touching, and round
+    everywhere because these are the most snag-prone features on the part.
+    """
+    stem = rect2d(proj + 3.0, w).translate((r_out + proj / 2.0 - 1.5, 0.0))
+    head = circle2d(head_d).translate((r_out + proj, 0.0))
+    return round2d(stem + head, round_r)

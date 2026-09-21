@@ -20,6 +20,7 @@ import math
 import params as P
 from lib.solids import (tube, box, cyl, poly, rect2d, fillet2d, hexagon2d,
                         union, extrude, chamfer_outer, bore_lead_in, SEG)
+from lib.patterns import cord_ear_2d
 import manifold3d as m3d
 from manifold3d import Manifold, JoinType
 
@@ -60,12 +61,14 @@ def clamp_range(g: dict) -> tuple:
 
 
 def _ear(angle: float, g: dict) -> Manifold:
-    """Cord ear: a flat tab on the rear face with a fore/aft cord hole."""
-    R_OUT = g["r_out"]
-    x0 = R_OUT - 2.5                     # overlap into the band
-    x1 = R_OUT + g["ear_proj"]
-    prof = rect2d(x1 - x0, P.EAR_W).translate(((x0 + x1) / 2.0, 0.0))
-    prof = fillet2d(prof, P.EAR_FILLET)
+    """Cord ear: a round boss on a blended stem, with a fore/aft cord hole.
+
+    Same profile the cap and the pinch collar use - see cord_ear_2d. The old
+    square slab read as a part from a different design sitting next to a cap
+    made entirely of rounds.
+    """
+    prof = cord_ear_2d(g["r_out"], P.CORD_RADIUS, P.EAR_BOSS_D,
+                       P.EAR_STEM_W, P.EAR_ROUND)
     ear = prof.extrude(P.EAR_T)
     hole = cyl(P.EAR_T + 2.0, P.CORD_HOLE, seg=48) \
         .translate([P.CORD_RADIUS, 0.0, -1.0])

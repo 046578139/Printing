@@ -21,7 +21,7 @@ import trimesh
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import params as P
-from parts import killflash, snapcollar
+from parts import killflash, snapcollar, pinchcollar, lapcollar
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stl", "sweep")
 
@@ -38,10 +38,11 @@ SETS = {
     "killflash-fit": dict(
         what="kill flash OD, press into the front recess",
         how="Count the dimples. Largest that seats with thumb pressure and "
-            "does not drop out inverted wins -> put it in KF_OD. Ranged for "
-            "a 0.40 nozzle, where the recess prints larger and the disc "
-            "smaller than at 0.60, so the fit runs looser both ways.",
-        values=frange(32.5, 33.3, 0.2),
+            "does not drop out inverted wins -> put it in KF_OD. Centred on "
+            "32.90 because 32.70 went in but was slightly loose, so the "
+            "answer is above it: 33.00 is nominal zero clearance and the "
+            "last two are real interference presses.",
+        values=frange(32.8, 33.2, 0.1),
         name=lambda v, i: "kf_od_%05.2f" % v,
         build=lambda v, i: killflash.build(od=v, marks=i + 1),
     ),
@@ -63,6 +64,33 @@ SETS = {
         values=frange(35.2, 36.8, 0.4),
         name=lambda v, i: "snap_%05.2f" % v,
         build=lambda v, i: snapcollar.build(bore=v, label="%.1f" % v),
+    ),
+    # The pinch collar's grip. OBJ_COLLAR_OD (36.90) is TRIANGULATED, not
+    # gauged - the 36.85 ring was read on the front bezel, not on the collar
+    # seat behind it. This ladder settles the seat diameter and the grip in
+    # one plate, which no gauge ring can do because the ring cannot tell you
+    # how much interference the ring wants.
+    "pinch-bore": dict(
+        what="01e pinch collar free bore",
+        how="Spread the two tabs, slide it down over the bare bezel, "
+            "release. Want the largest bore that still cannot be twisted by "
+            "hand once seated - that is the one with the least install "
+            "strain that still holds the cap's orientation. The bore size is "
+            "moulded into both cord ears. Fit these BEFORE the housing.",
+        values=frange(35.6, 36.8, 0.3),
+        name=lambda v, i: "pinch_%05.2f" % v,
+        build=lambda v, i: pinchcollar.build(bore=v, label="%.1f" % v),
+    ),
+    "lap-bore": dict(
+        what="01f lapped collar free bore",
+        how="SQUEEZE the two tabs together - they are at different heights "
+            "so they lap past each other - slide it down over the bare "
+            "bezel, release. Want the largest bore that still cannot be "
+            "twisted by hand once seated. Bore size is moulded into both "
+            "cord ears. Fits BEFORE the housing.",
+        values=frange(35.6, 36.8, 0.3),
+        name=lambda v, i: "lap_%05.2f" % v,
+        build=lambda v, i: lapcollar.build(bore=v, label="%.1f" % v),
     ),
     "lever-bore": dict(
         what="01d lever collar free bore",
@@ -99,6 +127,19 @@ def main(argv):
 
     os.makedirs(OUT, exist_ok=True)
     want = args or list(SETS)
+
+    # Clear the directory first. Retuning a range leaves the old values
+    # sitting there looking exactly as legitimate as the new ones, and a
+    # stale variant on the plate is a measurement you cannot trust and will
+    # not know not to trust. Only do it on a full run - a single-set run has
+    # no business deleting another set's files.
+    if not args:
+        stale = [f for f in os.listdir(OUT) if f.endswith(".stl")]
+        for f in stale:
+            os.remove(os.path.join(OUT, f))
+        if stale:
+            print("cleared %d previous sweep file(s)" % len(stale))
+
     total = 0.0
     for key in want:
         if key not in SETS:

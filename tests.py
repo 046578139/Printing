@@ -24,7 +24,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import params as P
 from lib.solids import box
-from parts import collar, snapcollar, shroud, killflash, cap
+from parts import (collar, snapcollar, pinchcollar, lapcollar, shroud,
+                   killflash, cap)
 
 FAILS = []
 CHECKS = [0]
@@ -47,6 +48,22 @@ def probe(m, name, p, want_solid):
           "%s: wanted %s at %s, got %s" %
           (name, "solid" if want_solid else "empty",
            tuple(round(v, 2) for v in p), "solid" if got else "empty"))
+
+
+def open_arc(m, bore, wall, z=5.5, step=1.0):
+    """Measure the open arc of a split ring, in degrees, by walking the band
+    at mid-wall radius. A probe at the gap CENTRE only proves the centre is
+    open - it happily passes a ring whose gap has been 78 % filled in from
+    both ends, which is exactly what a paddle root fillet cut against the
+    ungapped band did to 01d."""
+    r = bore / 2.0 + wall / 2.0
+    n = int(round(360.0 / step))
+    empty = 0
+    for i in range(n):
+        a = math.radians(i * step)
+        if not solid_at(m, (r * math.cos(a), r * math.sin(a), z), s=0.3):
+            empty += 1
+    return empty * step
 
 
 def topology(m, name, expect_genus=None):
@@ -103,6 +120,10 @@ def test_interfaces():
         ("texture groove", P.TEX_WALL),
         ("cord hole",      P.CORD_HOLE),
         ("ear thickness",  P.EAR_T),
+        ("ear stem",       P.EAR_STEM_W),
+        ("pinch tab stem", P.PINCH_TAB_W),
+        ("lap inner arm",  P.LAP_ARM_IN),
+        ("lap outer arm",  P.LAP_ARM_OUT),
     )
     for name, v in FEATURES:
         check(v >= P.NOZZLE * 1.1,
@@ -149,8 +170,15 @@ def test_interfaces():
 
     # Ear and boss need real meat outboard of the hole - this is what the
     # shock cord pulls against for the life of the part.
-    ear_wall = (P.COL_OD / 2 + P.EAR_PROJ) - (P.CORD_RADIUS + P.CORD_HOLE / 2)
-    boss_wall = (P.CAP_OD / 2 + P.CAP_BOSS_PROJ) - (P.CORD_RADIUS + P.CORD_HOLE / 2)
+    # Both are round bosses on the same cord radius now, so both walls are
+    # just (boss radius - hole radius). Measuring the old EAR_PROJ slab here
+    # would report CORD_EDGE_WALL back at itself and test nothing.
+    ear_wall = (P.EAR_BOSS_D - P.CORD_HOLE) / 2.0
+    boss_wall = (P.CAP_BOSS_D - P.CORD_HOLE) / 2.0
+    check(abs(P.EAR_BOSS_D - P.CAP_BOSS_D) < 1e-9,
+          "collar ear boss %.2f and cap boss %.2f are different sizes - the "
+          "set reads as parts from two designs"
+          % (P.EAR_BOSS_D, P.CAP_BOSS_D))
     check(ear_wall >= 2.0, "collar ear wall outboard of the cord hole is only %.2f" % ear_wall)
     check(boss_wall >= 2.0, "cap boss wall outboard of the cord hole is only %.2f" % boss_wall)
 
@@ -336,7 +364,8 @@ def test_collar_lever():
     gap = 360.0 - P.SNAP_LEVER_WRAP
     off = _m.degrees((P.LEVER_W / 2.0) / r_out)
     sep = _m.radians(gap - 2 * off)
-    r_head = r_out + P.LEVER_PROJ - P.LEVER_PAD_T / 2
+    # Head is a circle of LEVER_PAD_W centred at r_out + LEVER_PROJ.
+    r_head = r_out + P.LEVER_PROJ
     clear = 2 * r_head * _m.sin(sep / 2) - P.LEVER_PAD_W
     check(clear > 4.0,
           "only %.1f mm between the paddle heads - they will collide" % clear)
@@ -347,6 +376,206 @@ def test_collar_lever():
           (0.0, P.SNAP_LEVER_BORE / 2 + 1.5, 5.5), True)
     probe(m, "lever gap open at 6",
           (0.0, -(P.SNAP_LEVER_BORE / 2 + 1.5), 5.5), False)
+
+    want = 360.0 - P.SNAP_LEVER_WRAP
+    got = open_arc(m, P.SNAP_LEVER_BORE, P.COL_WALL)
+    check(abs(got - want) <= 6.0,
+          "lever gap measures %.0f deg, designed %.0f - something is filling "
+          "it in from the ends" % (got, want))
+
+
+def test_collar_pinch():
+    """01e - the recorder-style ring: nearly closed, two outward tabs.
+
+    The design claim being tested is the one that lets it wrap 340 deg: a
+    ring opened BY HAND and fitted axially only has to open its gap by
+    pi x expansion, which does not depend on wrap. A ring pushed on radially
+    has to pass the barrel through the chord between its tips, which
+    collapses as the wrap grows. If that ever stops being true the part is
+    no longer fittable and the wrap has to come back down.
+    """
+    import math as _m
+    m = pinchcollar.build()
+    topology(m, "collar_pinch", expect_genus=2)
+
+    check(P.PINCH_WRAP > P.SNAP_LEVER_WRAP,
+          "the pinch collar exists to read as a closed ring - %.0f deg is "
+          "no more wrap than the lever version's %.0f"
+          % (P.PINCH_WRAP, P.SNAP_LEVER_WRAP))
+    check(P.PINCH_WRAP < 352.0,
+          "%.0f deg leaves no gap to open - the tabs would butt together "
+          "before the bore had grown" % P.PINCH_WRAP)
+
+    r = pinchcollar.mechanics()
+    # Openable by hand, in the weakest material it will ever be printed in.
+    check(r["strain"] < 0.015,
+          "install strain %.2f%% exceeds PLA's ~1.5%% limit"
+          % (r["strain"] * 100))
+    check(r["strain"] < 0.015 / 2.0,
+          "install strain %.2f%% leaves under 2x margin in PLA"
+          % (r["strain"] * 100))
+    check(3.0 < r["force"] < 40.0,
+          "%.0f N at the tabs is outside what two fingers do comfortably"
+          % r["force"])
+    # It must actually grip once seated, or it is a bracelet.
+    check(P.PINCH_INTERF >= 0.40,
+          "%.2f mm of interference will not hold the cap's orientation"
+          % P.PINCH_INTERF)
+    check(P.PINCH_CLEAR > 0.0,
+          "no expansion past the seat - the ring would scrape on, not slide")
+    check(r["gap_open"] > r["gap_closed"] + 2.0,
+          "the gap only opens %.2f mm - not visibly enough to fit by feel"
+          % (r["gap_open"] - r["gap_closed"]))
+
+    # More wrap than the push-on ring could ever manage: prove the axial
+    # story, or the extra wrap is just a part that cannot be installed.
+    rad = snapcollar.mechanics(mode="radial", wrap=P.PINCH_WRAP,
+                               interference=P.PINCH_INTERF)
+    check(rad["install"] > r["strain"] * 3.0,
+          "radial and axial install are within 3x at %.0f deg - the reason "
+          "this wrap is allowed no longer holds" % P.PINCH_WRAP)
+
+    # Tab heads must have finger room between them in the relaxed state, and
+    # must not foul each other. You pull them APART, so the relaxed gap is
+    # the tightest they ever are.
+    r_out = pinchcollar.R_OUT
+    off = _m.degrees((P.PINCH_TAB_W / 2.0) / r_out)
+    sep = _m.radians(pinchcollar.GAP_DEG + 2 * off)
+    r_head = r_out + P.PINCH_TAB_PROJ
+    clear = 2 * r_head * _m.sin(sep / 2) - P.PINCH_TAB_HEAD
+    check(clear > 5.0,
+          "only %.1f mm between the tab heads - no room to get two "
+          "fingertips in and spread them" % clear)
+
+    # Tabs must reach out far enough to grab, but not stand proud of the
+    # cord ears, or they become the thing that snags on kit.
+    bb = m.bounding_box()
+    reach = max(bb[3], bb[4])
+    check(r_head + P.PINCH_TAB_HEAD / 2 <= P.CORD_RADIUS + P.EAR_BOSS_D / 2 + 1.5,
+          "tabs reach r=%.1f, past the cord ears at r=%.1f - they will be "
+          "the first thing to catch"
+          % (r_head + P.PINCH_TAB_HEAD / 2,
+             P.CORD_RADIUS + P.EAR_BOSS_D / 2))
+    check(reach < 32.0, "part is %.1f mm across - wider than planned" % (2 * reach))
+
+    # NO SQUARE EDGES on the outside. Every outboard feature comes from a
+    # round2d-ed profile; a zero round radius anywhere silently brings the
+    # square corners back.
+    for name, v in (("tab", P.PINCH_ROUND), ("ear", P.EAR_ROUND)):
+        check(v >= 1.0,
+              "%s round radius %.2f is too small to read as rounded" % (name, v))
+
+    # Gap at 12, band solid at 6. Bore clear. Cord holes open.
+    gr = P.PINCH_BORE / 2 + P.COL_WALL / 2
+    probe(m, "pinch gap open at 12", (0.0, gr, 5.5), False)
+    probe(m, "pinch band solid at 6", (0.0, -gr, 5.5), True)
+    probe(m, "pinch bore clear", (gr - P.COL_WALL, 0.0, 5.5), False)
+    probe(m, "pinch ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "pinch ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
+    want = GAP = 360.0 - P.PINCH_WRAP
+    got = open_arc(m, P.PINCH_BORE, P.COL_WALL)
+    check(abs(got - want) <= 6.0,
+          "pinch gap measures %.0f deg, designed %.0f - the root fillets are "
+          "closing it" % (got, want))
+
+    # Tab heads are real material, on both sides of the gap.
+    for sgn, tag in ((-1.0, "left"), (1.0, "right")):
+        a = _m.radians(P.PINCH_GAP_AT + sgn * (pinchcollar.GAP_DEG / 2 + off))
+        probe(m, "pinch tab head %s" % tag,
+              (r_head * _m.cos(a), r_head * _m.sin(a), 5.5), True)
+
+
+
+def test_collar_lap():
+    """01f - the lapped ring. The ends cross, so the tabs SQUEEZE together.
+
+    The whole mechanism lives in two clearances that no dimension check can
+    see: a radial gap between the nested arms below the split, and a vertical
+    gap above the outer arm. Lose either one and the arms fuse into a solid
+    ring that cannot be expanded at all - and it would still pass topology,
+    still be watertight, still measure the right bore, and still look
+    completely correct in a render. So they are probed.
+    """
+    import math as _m
+    m = lapcollar.build()
+    topology(m, "collar_lap", expect_genus=3)
+
+    # Section arithmetic. The two arms plus the slide gap ARE the wall; if
+    # they ever stop summing, one arm is silently eating the other's clearance.
+    check(abs(P.LAP_ARM_IN + P.LAP_SLIDE + P.LAP_ARM_OUT - P.COL_WALL) < 1e-9,
+          "lap arms %.2f + %.2f and a %.2f slide do not make a %.2f wall"
+          % (P.LAP_ARM_IN, P.LAP_ARM_OUT, P.LAP_SLIDE, P.COL_WALL))
+    check(P.LAP_SLIDE >= P.NOZZLE,
+          "a %.2f slide gap is under one %.2f nozzle - the slicer will bridge "
+          "it shut and fuse the two arms" % (P.LAP_SLIDE, P.NOZZLE))
+    check(P.LAP_SLIDE_Z >= P.LAYER,
+          "a %.2f vertical gap is under one %.2f layer - the flange will weld "
+          "to the outer arm" % (P.LAP_SLIDE_Z, P.LAYER))
+
+    # THE CLEARANCES. This is the part that matters.
+    rb = P.LAP_BORE / 2.0
+    r_i1 = rb + P.LAP_ARM_IN
+    r_o1 = r_i1 + P.LAP_SLIDE
+    r_o = rb + P.COL_WALL
+    zs, gz = P.LAP_SPLIT_Z, P.LAP_SLIDE_Z
+    A = _m.radians(P.LAP_AT)
+
+    def at(r, z, want, name):
+        p = (r * _m.cos(A), r * _m.sin(A), z)
+        got = solid_at(m, p, s=0.14)
+        check(got == want, "lap %s: wanted %s at r=%.2f z=%.2f, got %s"
+              % (name, "solid" if want else "empty", r, z,
+                 "solid" if got else "empty"))
+
+    at(rb + 0.6,          3.0,        True,  "inner arm below split")
+    at((r_i1 + r_o1) / 2, 3.0,        False, "RADIAL slide gap")
+    at((r_o1 + r_o) / 2,  3.0,        True,  "outer arm below split")
+    at((r_o1 + r_o) / 2,  zs + gz/2,  False, "VERTICAL slide gap")
+    at(rb + 0.6,          zs + gz/2,  True,  "inner arm through the gap")
+    at((r_o1 + r_o) / 2,  zs + gz+1.5, True, "flange above the gap")
+    at((r_i1 + r_o1) / 2, zs + gz+1.5, True, "flange closes the radial gap")
+    # Opposite the lap the band must be plain full wall, not split.
+    A = _m.radians(P.LAP_AT + 180.0)
+    at((r_i1 + r_o1) / 2, 3.0, True, "body is full wall opposite the lap")
+
+    # The two tabs must NOT share a height, or they collide before the ring
+    # has expanded. This is the reason the outer arm is cut down at all.
+    lo = (0.0, zs)
+    hi = (zs + gz, P.COL_HEIGHT)
+    check(lo[1] <= hi[0],
+          "the two tabs overlap in Z (%.2f-%.2f and %.2f-%.2f) - they will "
+          "butt heads instead of lapping past each other" % (lo + hi))
+    check(hi[1] - hi[0] >= 3.0,
+          "upper tab is only %.2f mm tall - not enough to squeeze"
+          % (hi[1] - hi[0]))
+    check(lo[1] - lo[0] >= 3.0,
+          "lower tab is only %.2f mm tall - not enough to squeeze"
+          % (lo[1] - lo[0]))
+
+    r = lapcollar.mechanics()
+    check(r["strain"] < 0.015,
+          "install strain %.2f%% exceeds PLA's ~1.5%% limit"
+          % (r["strain"] * 100))
+    check(r["strain"] < 0.015 / 2.0,
+          "install strain %.2f%% leaves under 2x margin in PLA"
+          % (r["strain"] * 100))
+    check(3.0 < r["force"] < 40.0,
+          "%.0f N at the tabs is outside what two fingers do comfortably"
+          % r["force"])
+    check(r["seated"] > 0.0010,
+          "seated strain %.3f%% is too low to hold the cap's orientation"
+          % (r["seated"] * 100))
+
+    # It has to still be lapped at full expansion, or it un-laps into a
+    # C-ring halfway through being fitted and never goes back.
+    check(r["lap_open"] >= 8.0,
+          "only %.1f deg of lap left at full expansion - it will un-lap in "
+          "your fingers" % r["lap_open"])
+    check(P.LAP_DEG > _m.degrees(r["spread"] / ((P.LAP_BORE + P.COL_WALL) / 2)),
+          "the squeeze needs more arc than the whole lap has")
+
+    probe(m, "lap ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "lap ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
 
 
 def test_shroud():
@@ -523,6 +752,8 @@ def test_assembly():
                     ("collar_proto", collar.build_proto()),
                     ("collar_snap", snapcollar.build()),
                     ("collar_lever", snapcollar.build_lever()),
+                    ("collar_pinch", pinchcollar.build()),
+                    ("collar_lap", lapcollar.build()),
                     ("killflash", killflash.build()),
                     ("shroud", sh)):
         check(abs(m.bounding_box()[2]) < 1e-6,
@@ -560,6 +791,8 @@ def test_export_orientation():
     # Parts modelled plate-side-down must be left alone.
     for name, fn in (("collar", collar.build),
                      ("collar_snap", snapcollar.build),
+                     ("collar_pinch", pinchcollar.build),
+                     ("collar_lap", lapcollar.build),
                      ("killflash", killflash.build)):
         m = fn()
         check(abs(build.orient(name, m).volume() - m.volume()) < 1e-6,
@@ -568,7 +801,8 @@ def test_export_orientation():
 
 def main():
     for fn in (test_interfaces, test_collar, test_collar_proto,
-               test_collar_snap, test_collar_lever, test_shroud,
+               test_collar_snap, test_collar_lever, test_collar_pinch,
+               test_collar_lap, test_shroud,
                test_killflash, test_cap, test_assembly,
                test_export_orientation):
         name = fn.__name__.replace("test_", "")

@@ -1,17 +1,45 @@
 # Assembly
 
 Per eye: 1 collar, 1 kill flash housing, 1 kill flash insert, 1 flip cap,
-1 M3 socket head cap screw, 1 M3 hex nut, and about 240 mm of 1/8 in
-(3.175 mm) shock cord. Double it for a binocular.
+and about 240 mm of 1/8 in (3.175 mm) shock cord. Double it for a binocular.
 
-Screw length depends on which collar you print: **16 mm** for
-`01_collar`, **30 mm** for `01b_collar_proto` — the prototype's pinch gap
-is 13 mm wide, so the screw has to span a lot more air before it closes.
+The recommended collar is **`01f_collar_lap`**, which needs no hardware
+and no tools. If you print a screw collar instead, add 1 M3 socket head cap
+screw and 1 M3 hex nut per eye: **16 mm** for `01_collar`, **30 mm** for
+`01b_collar_proto` — the prototype's pinch gap is 13 mm wide, so the screw
+has to span a lot more air before it closes.
 
 Every part is symmetric about the vertical plane, so there is **no left and
 right** — print two of each and they fit either pod.
 
 ## Order of operations
+
+> **With a spring collar (`01c` / `01d` / `01e` / `01f`) the collar goes
+> on FIRST.**
+> None of them will pass over the Ø43.7 housing, so the order below is
+> 0 → 1 → 2 → 4. Only the screw collars can be fitted after the housing,
+> because they open all the way. Get this wrong and you are pulling a very
+> tight press fit back off a coated objective.
+
+**0. Spring collar onto the bare bezel.** *(`01c`–`01f` only —
+skip to step 1 for a screw collar and come back at step 3.)*
+
+Cord ears at 3 and 9 o'clock, ears facing **rearward**, lap or gap at 12.
+
+- On **`01f`**, pinch the two tabs **together** — they sit at different
+  heights and lap past each other, so they will not butt. About 4 N. The
+  lap shortens from 30° to 18° and the bore grows 1.30 mm.
+- On **`01e`**, get a fingertip between the two tabs and **spread** them
+  apart instead. About 5 N; the gap opens from 6.8 to 10.9 mm.
+
+Slide the ring down the bezel to its seat and release.
+
+Before you let go, confirm the band is not sitting on anything that turns
+when you focus. On a PVS-14-pattern objective the focus ring turns, and a
+collar clamped to it will bind the focus.
+
+It should not rotate under a firm hand twist. If it does, the bore is too
+big — print the `lap-bore` (or `pinch-bore`) sweep and step down.
 
 **1. Housing onto the objective.**
 Push the housing straight on, front face forward. Go square — the rear bore
@@ -36,7 +64,8 @@ and an FDM boss comes out oversize, and here those two errors stack against
 each other on the same 0.30 mm clearance. That is a fit worth measuring
 rather than calculating.
 
-**3. Collar onto the barrel.**
+**3. Screw collar onto the barrel.** *(Skip if you fitted a spring collar
+at step 0.)*
 Slide it on behind the housing with the two cord ears at 3 and 9 o'clock,
 ears facing **rearward**, and the pinch lugs at 6 o'clock. Confirm one more
 time that the band is not sitting on anything that turns when you focus.
@@ -76,13 +105,13 @@ Cut four pieces about 120 mm each. Per side, per eye:
 Repeat on the other side. Both cords should end up the same length or the
 cap will sit crooked.
 
-## Which collar: screw or snap
+## Which collar
 
-Two mechanisms are provided. They are drop-in swaps — same cord ears, same
+Five collars are provided. They are drop-in swaps — same cord ears, same
 radius, same install direction — so you can fit one of each and decide on
 your own hardware.
 
-| | `01_collar` / `01b` screw clamp | `01c` snap C-ring |
+| | `01` / `01b` screw clamp | `01c` / `01d` / `01e` / `01f` spring rings |
 |---|---|---|
 | Hardware | M3 screw + hex nut per eye | none |
 | Tools | hex key | none |
@@ -91,6 +120,79 @@ your own hardware.
 | Rotational security | high, positive | friction only |
 | Parts to lose | 2 | 0 |
 | Ages by | loosening you can fix | creeping you cannot |
+
+### `01f` is the one to print
+
+`01f_collar_lap` is the recorder mount's actual mechanism, and getting to it
+took working out why every earlier ring moved the wrong way.
+
+On `01c`/`01d`/`01e` the tabs sit on the band either side of a **gap**.
+Expanding one of those rings opens the gap, so the tabs move *apart* — which
+is why all three have to be **spread**. Lap the two ends **past each other**
+instead and each tab rides a free **end**. The ends have crossed, so the
+angle between the tips *is* the lap; expanding the ring shortens the lap, and
+the tips — with the tabs on them — come **together**. Squeeze to expand.
+That is a spring hose clip, and it is what the recorder does.
+
+| Collar | Wrap | Fitting | Tab motion | Install strain | Force | Seated |
+|---|---|---|---|---|---|---|
+| `01c` push-on | 230° | push on radially | spread | 0.65 % | 12.1 N | 0.21 % |
+| `01d` lever | 290° | expand, slide on | spread | 0.45 % | 6.5 N | 0.21 % |
+| `01e` pinch | 340° | expand, slide on | spread | 0.37 % | 4.9 N | 0.22 % |
+| **`01f` lapped** | **390°** | **expand, slide on** | **squeeze** | **0.57 %** | **4.3 N** | **0.22 %** |
+
+*(Ø36.90 barrel, PLA at 2750 MPa, 0.89–0.90 mm interference on all four, so
+the seated column is the same by construction and only the cost of getting
+there differs.)*
+
+`01f` is the lightest squeeze of the four and the only one that reads as a
+genuinely closed circle. It is not the lowest strain — `01e` is — because
+`01f` carries its load through two thin lapped arms rather than one thick
+band. 0.57 % still leaves 2.6× margin in PLA and considerably more in
+PAHT-CF, and it buys the right *motion*.
+
+#### How the lap is built, and the one thing it forces
+
+Over 30° the band splits in thickness: a 1.20 mm inner arm, a 0.40 mm
+sliding gap, a 1.60 mm outer arm. The split is deliberately uneven. The
+inner arm gets a full-wall flange back above the gap, so an even split would
+leave the outer arm carrying the whole squeeze on a third of the section at
+0.81 % strain while the rest of the ring sat at 0.14 %. Moving 0.20 mm of
+wall outward and the divide up to 6.5 mm brings the worst case to 0.57 % and
+costs nothing.
+
+The step forces one thing, and it turns out to be the feature rather than
+the workaround: **the inner arm's tab cannot get out radially**, because the
+outer arm is in the way and there is no path through it. So the outer arm
+stops at 6.5 mm and the inner arm's tab rides over the top of it. The two
+tabs end up at **different heights** — which is exactly why they can lap past
+each other in plan view instead of butting heads. At full squeeze they are
+only a few millimetres apart and would collide if they shared a height.
+
+Everything prints as a vertical-walled extrusion except the flange, which
+bridges 0.30 mm above the outer arm. That is a print-in-place clearance, not
+an overhang, and there are no supports anywhere on the part.
+
+> **Check the lap is free before you fit it.** Squeeze the tabs on the bench
+> first. If the ring does not visibly grow, the 0.40 mm radial gap or the
+> 0.30 mm vertical one has been bridged shut by the slicer and the two arms
+> have fused — at which point it is a solid ring and forcing it will break
+> it. Turn off any "detect thin walls" or gap-filling option and reslice.
+
+### `01e` — the spread-apart version
+
+`01e_collar_pinch` reads closed at 340°, with two rounded tabs flanking a
+narrow gap. You **spread** these, not squeeze them. Kept because it is the
+lowest-strain ring in the set and has no sliding clearance to get wrong in
+the slicer — if the lap on `01f` fuses, this is the fallback.
+
+> **Neither `01e` nor `01f` can be pushed on. Both go on FIRST, before the
+> housing.** Forced on radially, `01e` would need 30.65 mm of spread and
+> **2.74 % strain** — 7.5× the axial route, and past PLA's ~1.5 % limit, so
+> it would simply break; `01f` laps past itself and cannot open radially at
+> all. Neither will pass over the Ø43.7 housing. Fit the collar to the bare
+> bezel, then the housing, then the cord. Taking the collar off later means
+> pulling the housing first.
 
 ### Three mechanisms, not two
 
@@ -155,9 +257,19 @@ in the first place.
 Both rings stay in the set for exactly this reason. Gauge the barrel, then
 pick.
 
-One thing to fix when that number lands: `SNAP_INTERF` is a fixed 2.00 mm,
-which is 4.9 % of a Ø41 bore but 5.9 % of a Ø34 one. It should scale with
-diameter rather than sit at a constant.
+The barrel came in at **Ø36.90 — below the crossover**, which is why `01c`
+and `01d` end up within 0.2 % of each other above and neither is a clear
+win. That is the result that made `01e` worth building.
+
+`01e` sidesteps this argument rather than winning it. The crossover exists
+because a *push-on* ring gets cheaper as the barrel shrinks while an axial
+one does not. At 340° the push-on route is not available at any diameter,
+so there is nothing to cross over — the only question left is whether there
+is an axial approach, and on this objective there is.
+
+*(Resolved since: `SNAP_INTERF` was a fixed 2.00 mm, which was 4.9 % of a
+Ø41 bore but 5.9 % of a Ø34 one. It is now `OBJ_COLLAR_OD × 2.4 %` and
+scales with the barrel, as does the pinch ring's.)*
 
 ### The snap ring's numbers
 
