@@ -13,17 +13,28 @@ right** — print two of each and they fit either pod.
 
 ## Order of operations
 
-**1. Kill flash into the housing.**
-The insert loads from the **rear** of the housing (the wide end) and seats
-against the integral front flange. It should need light thumb pressure. If
-it drops through, the flange is missing or the aperture is wrong — stop and
-check. Nothing glues; the objective traps it in the next step.
+**1. Housing onto the objective.**
+Push the housing straight on, front face forward. Go square — the rear bore
+lead-in will help, but a cocked start will gall the bezel. It bottoms
+positively against the internal flange; that is the depth stop and it is
+hardware-confirmed. Do **not** force a fit that clearly does not want to go;
+go back to the gauge.
 
-**2. Housing onto the objective.**
-Push the housing straight on, front flange forward. Go square — the rear
-lead-in chamfer will help, but a cocked start will gall the bezel. It should
-take firm thumb pressure and stay put when inverted. Do **not** force a fit
-that clearly does not want to go; go back to the gauge.
+**2. Kill flash into the FRONT recess.**
+The insert presses into the Ø33.00 counterbore on the **front** of the
+housing, chamfered edge leading, and seats on the flange 0.20 mm under
+flush. Light thumb pressure.
+
+It does not go in from the rear — the objective fills the whole bore and
+bottoms on the back of that same flange, so there is no rear pocket. If the
+press is wrong, print `07_gauge_killflash`: five plugs stepping 0.15 mm, and
+you want the largest one that seats with thumb pressure and does not fall
+out when inverted. Put that number in `KF_OD`.
+
+A note on why this needed a gauge at all: an FDM hole comes out undersize
+and an FDM boss comes out oversize, and here those two errors stack against
+each other on the same 0.30 mm clearance. That is a fit worth measuring
+rather than calculating.
 
 **3. Collar onto the barrel.**
 Slide it on behind the housing with the two cord ears at 3 and 9 o'clock,

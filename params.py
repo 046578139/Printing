@@ -30,12 +30,13 @@ OBJ_FRONT_OD    = 36.75   # [CONFIRMED in PLA] fine ladder (0.10 steps) picked
                           # edge. 36.90 - FIT_PRESS = 36.75. Valid in PLA only -
                           # re-gauge in the production filament. See
                           # docs/CALIBRATION.md.
-OBJ_FRONT_LEN   = 10.00   # [VERIFY] usable straight length of that bezel
-OBJ_COLLAR_OD   = 41.00   # [STILL UNVERIFIED - and now suspect. The front bezel
-                          # came in 1.3 mm under its PVS-14 nominal, so this one
-                          # probably is too. The coarse collar ladder may not even
-                          # have bracketed it. Do not print a collar until this is
-                          # read off a gauge.]
+OBJ_FRONT_LEN   = 13.00   # [CONFIRMED] the bezel inserts the full bore depth
+OBJ_COLLAR_OD   = 36.90   # [TRIANGULATED, not yet gauged] Two oversized test
+                          # prints agree: the 39.00 snap ring read ~2 mm loose
+                          # and the 42.20 bolt-on ~5 mm loose, which both land
+                          # on a ~37.0 seat. So it is NOT much smaller than the
+                          # 36.75 front bezel - it is essentially the same
+                          # diameter. Confirm on the 30-42 ladder.
 OBJ_COLLAR_LEN  = 12.00   # [VERIFY] usable straight length there
 
 # --------------------------------------------------------------------------
@@ -125,6 +126,15 @@ WALL_STD        = 2.40    # 6 perimeters, standard structural wall
 THIN_WALL       = 0.45    # single-extrusion wall (kill flash cells)
 FIRST_LAYER_SQUISH = 0.00 # set to ~0.05 if your first layer elephant-foots
 
+# THE PLATE-FACE RULE. Never chamfer the face that goes down on the plate.
+# A 0.6 mm chamfer on the bottom of a 3.2 mm band leaves a 2.0 mm first layer
+# that then widens over the next few layers - which prints ragged for three
+# or four layers and only cleans up once it reaches full width. Every part
+# here now leaves its plate face perfectly flat and takes its edge break on
+# the top instead. Costs nothing; it was the single worst print defect in
+# the first round.
+PLATE_FACE_CHAMFER = 0.00
+
 
 # ==========================================================================
 # 02  KILL FLASH HOUSING (shroud)
@@ -132,8 +142,24 @@ FIRST_LAYER_SQUISH = 0.00 # set to ~0.05 if your first layer elephant-foots
 SHROUD_BORE     = OBJ_FRONT_OD + FIT_PRESS + BORE_BIAS
 SHROUD_WALL     = 3.40
 SHROUD_OD       = SHROUD_BORE + 2 * SHROUD_WALL      # ~44.9
-SHROUD_GRIP_LEN = 8.00    # how far it swallows the objective bezel
-SHROUD_LEAD_IN  = 1.20    # rear chamfer so it starts onto the lens squarely
+# Depth of the 36.90 bore, i.e. how far the objective goes in before it
+# bottoms on the back of the internal flange. CONFIRMED CORRECT on hardware:
+# "very tight fit, fully bottoms out where it should". Do not touch it.
+#
+# This used to be derived as SHROUD_GRIP_LEN + KF_THICK, on the assumption
+# that the kill flash lived in a rear pocket. It does not - the objective
+# fills the entire bore, which is exactly why the first insert had nowhere
+# to go. The bore depth is now its own number so that resizing the kill
+# flash can never move the face the objective seats against.
+SHROUD_BORE_LEN = 13.00
+SHROUD_GRIP_LEN = SHROUD_BORE_LEN
+SHROUD_LEAD_IN  = 1.00    # rear bore lead-in, so it starts onto the lens square
+SHROUD_REAR_CH  = 0.30    # rear OUTER edge break
+# These two eat into the same rear face from opposite sides, and that face is
+# only COLLET_WALL wide. At 1.20 + 0.80 on a 1.90 wall they overlapped and
+# deleted the rear face outright - the collet fingers feathered to a knife
+# edge and the part's first solid layer sat 0.05 mm up. tests.py now checks
+# the sum against the wall.
 
 # Collet slots through the grip section. A solid 3.4 mm ring pressed at
 # +0.15 onto an objective barrel has a narrow acceptance window and dumps
@@ -186,15 +212,28 @@ KNURL_ANGLE     = 32.0
 # ==========================================================================
 # 03  KILL FLASH INSERT
 # ==========================================================================
-KF_FIT          = 0.25                     # light press of the insert into the bore
-KF_OD           = SHROUD_BORE - KF_FIT
-KF_THICK        = 5.00                     # depth of the honeycomb
-KF_CELL_AF      = 4.00                     # hex across-flats
-KF_WALL         = THIN_WALL
-KF_RIM          = 1.10                     # solid outer rim
-KF_CHAMFER      = 0.50
-# Open-area fraction ~= (AF/(AF+wall))^2 ~= 0.80
-# Cutoff angle      ~= atan(AF/THICK)     ~= 39 deg off-axis
+# It goes into the housing's FRONT recess, not into a rear pocket. The
+# objective bottoms against the back of the internal flange and fills the
+# whole 36.90 bore, so there is no rear pocket to put it in - which is why
+# the first one would not fit. It slides into the front, presses, and sits
+# just under flush; the cap covers it.
+KF_RECESS_D     = SHROUD_APERTURE                  # the front bore, 33.00
+KF_RECESS_LEN   = SHROUD_FLANGE_T + REG_HEIGHT     # depth of that recess
+KF_FIT          = 0.30                             # diametral, press fit
+KF_SINK         = 0.20                             # sits this far below flush
+KF_OD           = KF_RECESS_D - KF_FIT
+KF_THICK        = KF_RECESS_LEN - KF_SINK
+
+# 0.80 mm is exactly two 0.40 extrusions. The first insert used 0.45 mm
+# single-extrusion walls and the slicer dropped every one of them - the part
+# came off the plate as a bare rim. Two full perimeters is the smallest wall
+# that is not at the mercy of thin-wall detection.
+KF_WALL         = 0.80
+KF_CELL_AF      = 4.20
+KF_RIM          = 1.10
+KF_CHAMFER      = 0.50    # TOP edge only - insert chamfer-first (see docs)
+# Open-area fraction ~= (AF/(AF+wall))^2 ~= 0.68
+# Cutoff angle      ~= atan(AF/THICK)     ~= 47 deg off-axis
 
 
 # ==========================================================================
@@ -229,11 +268,11 @@ SNAP_LEADIN     = 8.00    # extra gap degrees at the bore only: a cam ramp so
 SNAP_LEADIN_D   = 1.20    # radial depth of that ramp
 
 # Free bore sits this far under the barrel; the interference IS the grip.
-# 2.00 is a deliberately generous PROTOTYPE value: it makes one ring cover
-# the whole unverified barrel range (roughly 39.2 to 42.2) instead of only
-# the nominal. Drop it to about 0.8-1.0 once OBJ_COLLAR_OD is gauged, or the
-# ring will be needlessly hard to fit.
-SNAP_INTERF     = 2.00
+# Expressed as a FRACTION of diameter, not a fixed millimetre value: a flat
+# 2.00 mm was 4.9 % of a 41 bore but 5.9 % of a 37 one, so it quietly
+# demanded more strain as the barrel estimate came down.
+SNAP_INTERF_PCT = 0.024
+SNAP_INTERF     = OBJ_COLLAR_OD * SNAP_INTERF_PCT
 SNAP_BORE       = OBJ_COLLAR_OD - SNAP_INTERF + BORE_BIAS
 
 # --------------------------------------------------------------------------
@@ -254,7 +293,7 @@ SNAP_BORE       = OBJ_COLLAR_OD - SNAP_INTERF + BORE_BIAS
 # objective bezel, which is the smaller diameter, so it should be fine - but
 # it means the shroud comes off before the collar does.
 SNAP_LEVER_WRAP   = 290.00
-SNAP_LEVER_INTERF = 2.00   # prototype value, as SNAP_INTERF above
+SNAP_LEVER_INTERF = OBJ_COLLAR_OD * SNAP_INTERF_PCT
 SNAP_LEVER_CLEAR  = 0.50   # extra expansion so it slides past the step
 SNAP_LEVER_BORE   = OBJ_COLLAR_OD - SNAP_LEVER_INTERF + BORE_BIAS
 
@@ -271,8 +310,8 @@ LEVER_ROUND     = 1.60
 # ~38.06, covering the whole plausible spread for this barrel, so the cord
 # and flip action can be prototyped before the collar has been gauged.
 # Needs an M3 x 30 screw rather than x 16.
-COL_PROTO_BORE  = 42.20
-COL_PROTO_GAP   = 13.00
+COL_PROTO_BORE  = 38.60
+COL_PROTO_GAP   = 11.00
 
 # Cord ears at 3 and 9 o'clock. Hole runs fore/aft so the cord exits forward.
 EAR_W           = 10.00
@@ -305,14 +344,14 @@ TAB_T           = 4.60
 TAB_UNDERCUT    = 1.80
 
 # Grip texture panels at 12 and 6 o'clock.
-TEX_CELL        = 1.80
-TEX_DEPTH       = 0.60
-TEX_WALL        = 0.60
+TEX_CELL        = 2.60
+TEX_DEPTH       = 0.70
+TEX_WALL        = 0.80
 
 # Centre mark. Generic chevron/mountain deboss - swap or disable freely.
 MARK_ENABLE     = True
-MARK_W          = 17.00
-MARK_DEPTH      = 0.70
+MARK_W          = 18.00
+MARK_DEPTH      = 0.60
 
 
 # ==========================================================================

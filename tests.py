@@ -68,18 +68,33 @@ def topology(m, name, expect_genus=None):
 
 # ---------------------------------------------------------------- interfaces
 def test_interfaces():
-    check(P.KF_OD < P.SHROUD_BORE,
-          "kill flash (%.2f) will not enter the shroud bore (%.2f)"
-          % (P.KF_OD, P.SHROUD_BORE))
-    check(P.SHROUD_BORE - P.KF_OD <= 0.45,
-          "kill flash is loose in the shroud bore (%.2f clearance)"
-          % (P.SHROUD_BORE - P.KF_OD))
-    check(P.SHROUD_APERTURE < P.KF_OD,
-          "front flange (%.2f) will not retain the kill flash (%.2f) - it "
-          "would fall straight out the front" % (P.SHROUD_APERTURE, P.KF_OD))
+    # The kill flash lives in the housing's FRONT recess. The objective
+    # fills the whole bore and bottoms on the flange, so there is no rear
+    # pocket - asserting otherwise is what let the first insert ship at a
+    # size that fitted nowhere.
+    check(P.KF_OD < P.KF_RECESS_D,
+          "kill flash (%.2f) will not enter the front recess (%.2f)"
+          % (P.KF_OD, P.KF_RECESS_D))
+    check(P.KF_RECESS_D - P.KF_OD <= 0.50,
+          "kill flash is loose in the front recess (%.2f clearance)"
+          % (P.KF_RECESS_D - P.KF_OD))
+    check(P.KF_THICK < P.KF_RECESS_LEN,
+          "kill flash (%.2f) is deeper than the recess (%.2f) and would "
+          "stand proud, blocking the cap" % (P.KF_THICK, P.KF_RECESS_LEN))
+    check(P.KF_RECESS_LEN - P.KF_THICK >= 0.10,
+          "only %.2f mm of sink - too close to proud"
+          % (P.KF_RECESS_LEN - P.KF_THICK))
+    check(P.KF_WALL >= 2 * P.NOZZLE * 0.98,
+          "kill flash wall %.2f is under two full extrusions at a %.2f "
+          "nozzle - the slicer will drop the cells" % (P.KF_WALL, P.NOZZLE))
     check(P.SHROUD_APERTURE > 28.0,
           "aperture %.2f is tight enough to vignette PVS-14 pattern glass"
           % P.SHROUD_APERTURE)
+
+    # No chamfer may sit on a plate face. This is the defect that made every
+    # ring in the first round print ragged for its first few layers.
+    check(abs(P.PLATE_FACE_CHAMFER) < 1e-9,
+          "PLATE_FACE_CHAMFER must stay zero")
 
     check(P.CAP_SKIRT_BORE > P.REG_OD,
           "cap pocket (%.2f) will not fit over the register (%.2f)"
@@ -310,15 +325,57 @@ def test_shroud():
     m = shroud.build()
     topology(m, "shroud", expect_genus=1)
     r_b, r_o = P.SHROUD_BORE / 2, P.SHROUD_OD / 2
-    probe(m, "shroud mount bore clear", (r_b - 1.0, 0.0, 4.0), False)
-    probe(m, "shroud wall at mount",    (r_b + 1.5, 0.0, 4.0), True)
-    probe(m, "shroud kf pocket clear",  (r_b - 1.0, 0.0, shroud.Z_KF + 2.5), False)
-    probe(m, "shroud flange present",   (P.SHROUD_APERTURE / 2 + 1.2, 0.0, shroud.Z_FLNG + 0.8), True)
-    probe(m, "shroud aperture clear",   (0.0, 0.0, shroud.Z_FLNG + 0.8), False)
+    r_ap = P.KF_RECESS_D / 2
+    z_mid = (shroud.Z_FLNG + shroud.Z_TOP) / 2      # inside the front recess
+
+    # The objective's bore, all the way to the flange it bottoms on.
+    probe(m, "shroud bore clear (rear)",  (r_b - 1.0, 0.0, 3.0), False)
+    probe(m, "shroud bore clear (front)", (r_b - 1.0, 0.0, shroud.Z_FLNG - 1.0), False)
+    probe(m, "shroud wall at bore",       (r_b + 1.5, 0.0, 3.0), True)
+
+    # The flange the objective seats against - material must appear at the
+    # aperture radius right where the bore ends.
+    probe(m, "shroud flange present", (r_ap + 1.2, 0.0, shroud.Z_FLNG + 0.8), True)
+
+    # The FRONT recess the kill flash presses into.
+    probe(m, "shroud front recess clear", (r_ap - 2.0, 0.0, z_mid), False)
+    probe(m, "shroud recess wall",        (r_ap + 1.2, 0.0, z_mid), True)
+    probe(m, "shroud aperture open",      (0.0, 0.0, z_mid), False)
+
     probe(m, "shroud register wall",    (P.REG_OD / 2 - 1.2, 0.0, shroud.Z_BODY + 1.0), True)
     probe(m, "shroud shoulder is void", (r_o - 0.6, 0.0, shroud.Z_BODY + 1.0), False)
-    check(shroud.Z_KF >= P.SHROUD_GRIP_LEN,
-          "kill flash pocket overlaps the objective bezel")
+
+    # And the recess has to be clear over the kill flash's full footprint,
+    # for its full thickness - the whole point of this rebuild.
+    import math as _m2
+    for a in (0, 90, 180, 270):
+        rr = P.KF_OD / 2 - 0.6
+        probe(m, "shroud recess clear at %d deg" % a,
+              (rr * _m2.cos(_m2.radians(a)), rr * _m2.sin(_m2.radians(a)),
+               shroud.Z_FLNG + P.KF_THICK - 0.3), False)
+    # The rear bore lead-in and the rear outer chamfer bite into the SAME
+    # annular face from opposite sides. If they sum past the wall they erase
+    # it, the fingers feather to a knife edge, and the part no longer starts
+    # at Z=0 - which is exactly what shipped in the first round.
+    rear_wall = P.COLLET_WALL if P.SHROUD_SLOTS else P.SHROUD_WALL
+    left = rear_wall - P.SHROUD_LEAD_IN - P.SHROUD_REAR_CH
+    check(left >= 0.4,
+          "rear face is only %.2f mm wide after a %.2f lead-in and a %.2f "
+          "chamfer on a %.2f wall" % (left, P.SHROUD_LEAD_IN,
+                                      P.SHROUD_REAR_CH, rear_wall))
+    bb = m.bounding_box()
+    check(abs(bb[2]) < 1e-6,
+          "shroud does not start at Z=0 (starts at %.3f) - something has "
+          "eaten the rear face" % bb[2])
+    check(abs(bb[5] - shroud.Z_TOP) < 1e-6,
+          "shroud top is %.3f, expected %.3f" % (bb[5], shroud.Z_TOP))
+
+    # The objective seats against the flange, so that depth is hardware-
+    # confirmed and must not drift when the kill flash is resized.
+    check(abs(shroud.Z_FLNG - P.SHROUD_BORE_LEN) < 1e-9,
+          "flange seat has moved off SHROUD_BORE_LEN")
+    check(abs((shroud.Z_TOP - shroud.Z_FLNG) - P.KF_RECESS_LEN) < 1e-9,
+          "front recess depth no longer matches KF_RECESS_LEN")
 
     if P.SHROUD_SLOTS:
         import math as _m
@@ -380,13 +437,21 @@ def test_killflash():
     topology(m, "killflash")
     solid = math.pi * (P.KF_OD / 2) ** 2 * P.KF_THICK
     open_frac = 1 - m.volume() / solid
-    check(open_frac > 0.60,
+    check(open_frac > 0.55,
           "kill flash open area is only %.0f%% - too much light lost" % (open_frac * 100))
-    check(m.genus() > 30, "kill flash has only %d cells" % m.genus())
-    probe(m, "killflash rim",    (P.KF_OD / 2 - P.KF_RIM / 2, 0.0, 2.5), True)
-    probe(m, "killflash centre", (0.0, 0.0, 2.5), False)
+    check(m.genus() > 25, "kill flash has only %d cells" % m.genus())
+    probe(m, "killflash rim",    (P.KF_OD / 2 - P.KF_RIM / 2, 0.0, 1.5), True)
+    probe(m, "killflash centre", (0.0, 0.0, 1.5), False)
+    bb = m.bounding_box()
+    check(abs(bb[2]) < 1e-6,
+          "kill flash does not start at Z=0 - the plate face has been "
+          "chamfered")
     of, cutoff = killflash.optics()
-    check(25 < cutoff < 55, "cutoff angle %.0f deg is outside a sane range" % cutoff)
+    check(cutoff > 45.0,
+          "cutoff %.0f deg is inside the ~40 deg field of view - the flash "
+          "would vignette the image" % cutoff)
+    check(cutoff < 60.0,
+          "cutoff %.0f deg is so wide it suppresses almost nothing" % cutoff)
 
 
 def test_cap():
@@ -402,10 +467,44 @@ def test_cap():
     probe(m, "cap thumb scoop",      (0.0, cap.TAB_Y_OUT + 2.5, 0.3), False)
 
 
+def test_assembly():
+    """Virtual assembly. Parts that pass every dimension check individually
+    can still refuse to go together - which is exactly what happened to the
+    first kill flash."""
+    sh = shroud.build()
+    kf = killflash.build().translate([0, 0, shroud.Z_FLNG])
+
+    clash = (sh ^ kf).volume()
+    check(clash < 1e-6,
+          "kill flash fouls the housing by %.3f mm3 when seated" % clash)
+
+    top = shroud.Z_FLNG + P.KF_THICK
+    check(top <= shroud.Z_TOP,
+          "kill flash stands %.2f mm proud of the front face and would hold "
+          "the cap off" % (top - shroud.Z_TOP))
+
+    # The cap has to close over whatever is in the recess.
+    check(P.CAP_SKIRT_DEPTH > P.REG_HEIGHT,
+          "cap bottoms on the register instead of the shoulder")
+    check(P.CAP_SKIRT_BORE > P.REG_OD,
+          "cap will not go over the register")
+
+    # Every part must sit flat on the plate. A chamfered plate face is the
+    # defect that made the first round print ragged for its first layers.
+    for name, m in (("collar", collar.build()),
+                    ("collar_proto", collar.build_proto()),
+                    ("collar_snap", snapcollar.build()),
+                    ("collar_lever", snapcollar.build_lever()),
+                    ("killflash", killflash.build()),
+                    ("shroud", sh)):
+        check(abs(m.bounding_box()[2]) < 1e-6,
+              "%s does not start at Z=0 - its plate face is chamfered" % name)
+
+
 def main():
     for fn in (test_interfaces, test_collar, test_collar_proto,
                test_collar_snap, test_collar_lever, test_shroud,
-               test_killflash, test_cap):
+               test_killflash, test_cap, test_assembly):
         name = fn.__name__.replace("test_", "")
         before = len(FAILS)
         fn()

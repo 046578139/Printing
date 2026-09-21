@@ -1,21 +1,25 @@
 """02 - Kill flash housing ("shroud").
 
-Slips over the objective front bezel and carries the kill flash. The kill
-flash loads from the REAR, seats against an integral front flange, and is
-then trapped by the objective itself - no snap ring, no glue, and it still
-comes apart for cleaning in two seconds.
+Slips over the objective front bezel. The objective goes all the way in and
+bottoms against the internal flange, which is the depth stop. The kill flash
+presses into the counterbore on the FRONT of that flange and is covered by
+the cap.
 
 Axial layout, Z=0 at the rear face, +Z forward:
 
-    0.0 .............. objective bezel enters here
-    GRIP_LEN ......... kill flash seats from here
-    +KF_THICK ........ front retaining flange begins
-    +FLANGE_T ........ cap register spigot begins
-    +REG_HEIGHT ...... front face
+    0.0 ................ objective bezel enters here
+    SHROUD_BORE_LEN .... objective BOTTOMS OUT against the flange
+    +FLANGE_T .......... cap register spigot begins
+    +REG_HEIGHT ........ front face
+
+The kill flash does NOT live in this bore - the objective fills all of it.
+It goes into the FRONT recess, the SHROUD_APERTURE-diameter counterbore
+between the flange and the front face.
 
 Print orientation: FRONT FACE DOWN on the plate. Every overhang in the part
 is then either a 45 degree chamfer or an upward-opening pocket, so it needs
-no support anywhere.
+no support anywhere. The front face itself is left perfectly flat - see the
+plate-face rule in params.py.
 """
 
 import math
@@ -25,8 +29,8 @@ from lib.solids import (profile_revolve, cyl, chamfer_outer, bore_lead_in,
                         union, rect2d)
 from lib.patterns import axial_flutes
 
-Z_KF    = P.SHROUD_GRIP_LEN                       # kill flash seat face
-Z_FLNG  = Z_KF + P.KF_THICK                       # flange rear face
+Z_KF    = P.SHROUD_BORE_LEN                       # (kept as an alias)
+Z_FLNG  = P.SHROUD_BORE_LEN                       # flange rear face / seat
 Z_BODY  = Z_FLNG + P.SHROUD_FLANGE_T              # body front / register base
 Z_TOP   = Z_BODY + P.REG_HEIGHT                   # front face
 TOTAL   = Z_TOP
@@ -77,11 +81,13 @@ def build():
     cuts = [
         # rear lead-in so the shroud starts onto the bezel square, not cocked
         bore_lead_in(0.0, P.SHROUD_BORE, P.SHROUD_LEAD_IN, False),
-        # rear outside edge
+        # rear outside edge - kept small, it shares the rear face with the
+        # bore lead-in above and that face is only COLLET_WALL wide
         chamfer_outer(0.0, P.COLLET_OD if P.SHROUD_SLOTS else P.SHROUD_OD,
-                      0.8, False),
-        # front face edge of the register
-        chamfer_outer(Z_TOP, P.REG_OD, P.REG_CHAMFER, True),
+                      P.SHROUD_REAR_CH, False),
+        # NOTE: no chamfer on the front register. That face goes DOWN on the
+        # plate, and chamfering it narrowed the first layer so the part
+        # started ragged and only cleaned up once it reached full width.
         # break the aperture edge so it does not shave the kill flash rim
         bore_lead_in(Z_FLNG, P.SHROUD_APERTURE, 0.5, False),
     ]

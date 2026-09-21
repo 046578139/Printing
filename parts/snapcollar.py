@@ -155,11 +155,10 @@ def build_lever():
                  + [_ear(0.0, r_out, ear_proj), _ear(180.0, r_out, ear_proj)])
 
     part = part - cyl(P.COL_HEIGHT + 4.0, bore, seg=SEG).translate([0, 0, -2.0])
+    # Top edge breaks only - the bottom is the plate face. See params.py.
     part = part - union([
         bore_lead_in(P.COL_HEIGHT, bore, 1.0, True),
-        bore_lead_in(0.0, bore, 1.0, False),
         chamfer_outer(P.COL_HEIGHT, od, 0.8, True),
-        chamfer_outer(0.0, od, 0.6, False),
     ])
     return part
 
@@ -195,11 +194,10 @@ def build():
     # Re-cut the bore: the ears overlap into it.
     part = part - cyl(P.COL_HEIGHT + 4.0, bore, seg=SEG).translate([0, 0, -2.0])
 
+    # Top edge breaks only - the bottom is the plate face. See params.py.
     part = part - union([
         bore_lead_in(P.COL_HEIGHT, bore, 1.0, True),
-        bore_lead_in(0.0, bore, 0.6, False),
         chamfer_outer(P.COL_HEIGHT, od, 0.8, True),
-        chamfer_outer(0.0, od, 0.6, False),
     ])
     return part
 

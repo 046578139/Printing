@@ -139,6 +139,15 @@ def main(argv):
             out = fname + ("_" + opts["tag"] if "tag" in opts else "")
             rows.append(build_one("gauge:" + tag, g, None, m, out))
 
+    if "gauge" in want or "gauge:killflash" in want:
+        m = dict(gauge.META)
+        m["desc"] = "Plug ladder for the kill flash press into the front recess."
+        m["orient"] = "FLAT on the plate. No supports."
+        rows.append(build_one("gauge:killflash",
+                              gauge.plug_gauge(P.KF_RECESS_D, P.KF_FIT,
+                                               count=5, step=0.15),
+                              None, m, "07_gauge_killflash"))
+
     w = max(len(r["file"]) for r in rows)
     print("\nNVG objective cap set  --  %s\n" % time.strftime("%Y-%m-%d %H:%M"))
     print(P.summary())

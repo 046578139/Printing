@@ -90,6 +90,56 @@ def build(nominal: float, fit: float = 0.0, count: int = None,
     return union(solids)
 
 
+def plug_gauge(nominal: float, fit: float = 0.0, count: int = 5,
+               step: float = 0.15, height: float = 2.50,
+               plate: float = 240.0):
+    """Ladder of test PLUGS for dialling in an OUTSIDE diameter.
+
+    The bore ladder above measures a hole; this measures a boss. Both errors
+    run the same way and they stack: an FDM hole comes out undersize and an
+    FDM boss comes out oversize, so a CAD clearance of 0.25 can easily close
+    to nothing in the real parts. That is what to use this for - the kill
+    flash pressing into the housing's front recess.
+    """
+    mid = (count - 1) / 2.0
+    ods = [nominal - fit + (i - mid) * step for i in range(count)]
+    max_od = max(ods)
+    pitch = max_od + P.GAUGE_PITCH_PAD
+    y_out = max_od / 2.0 + TEXT_PAD
+    per_row = max(1, int(plate // pitch))
+
+    solids, rows = [], {}
+    for i, od in enumerate(ods):
+        row, col = divmod(i, per_row)
+        x, y = col * pitch, -row * (y_out + RAIL_W / 2.0 + max_od / 2.0 + 4.0)
+        rows.setdefault(row, []).append(col)
+
+        plug = tube(height, od, od - 4.0, seg=SEG)
+        plug = plug - chamfer_outer(height, od, 0.5, True)
+        solids.append(plug.translate([x, y, 0]))
+
+        y_in = od / 2.0 - 1.5
+        fl = fillet2d(rect2d(pitch - 1.5, y_out - y_in)
+                      .translate((0.0, (y_out + y_in) / 2.0)), 1.5)
+        flag = fl.extrude(FLAG_T)
+        label = "%.2f" % od
+        txt = text_2d(label, P.GAUGE_TEXT_H)
+        if not txt.is_empty():
+            flag = flag - txt.extrude(P.GAUGE_TEXT_D + 0.2) \
+                .translate([0.0, y_out - P.GAUGE_TEXT_H / 2.0 - 2.2,
+                            FLAG_T - P.GAUGE_TEXT_D])
+        solids.append(flag.translate([x, y, 0]))
+
+    for row, cols in rows.items():
+        span = (max(cols) - min(cols)) * pitch + pitch
+        solids.append(
+            box(span, RAIL_W, FLAG_T, center=False)
+            .translate([min(cols) * pitch - pitch / 2.0,
+                        -row * (y_out + RAIL_W / 2.0 + max_od / 2.0 + 4.0)
+                        + y_out - RAIL_W / 2.0, 0.0]))
+    return union(solids)
+
+
 META = dict(
     name="fit_gauge",
     desc="Ring ladder for dialling in the two hardware bores.",

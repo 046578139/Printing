@@ -111,6 +111,8 @@ def chevron_mark(width: float, depth: float) -> Manifold:
     peak = poly([(-w, y0), (w, y0), (0.0, y0 + h)])
     # Notch: a smaller inverted peak taken out of the base, which reads as a
     # mountain rather than a plain triangle and gives the deboss two edges.
-    nw, nh = w * 0.46, h * 0.52
+    nw, nh = w * 0.38, h * 0.44
     notch = poly([(-nw, y0 - 0.1), (nw, y0 - 0.1), (0.0, y0 + nh)])
-    return round2d(peak - notch, 0.5).extrude(depth)
+    # Rounded generously: at 0.6 mm deep the deboss floor is only a few
+    # layers, and sharp internal corners there leave an unclosed seam.
+    return round2d(peak - notch, 0.75).extrude(depth)

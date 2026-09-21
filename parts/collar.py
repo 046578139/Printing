@@ -118,13 +118,13 @@ def build(bore: float = None, gap: float = None):
 
     part = part - union([slot, bore_cut])
 
-    # Edge breaks. Lead-in at the top of the bore so it starts onto the
-    # barrel square; chamfers top and bottom outside.
+    # Edge breaks on the TOP only. The bottom face is the plate face and
+    # stays dead flat: chamfering it left a 2.0 mm first layer on a 3.2 mm
+    # band, which printed ragged for several layers before widening out.
+    # Fit the collar top-first - the lead-in is up there.
     part = part - union([
         bore_lead_in(P.COL_HEIGHT, g["bore"], 1.0, True),
-        bore_lead_in(0.0, g["bore"], 0.6, False),
         chamfer_outer(P.COL_HEIGHT, od, 0.8, True),
-        chamfer_outer(0.0, od, 0.6, False),
     ])
     return part
 
