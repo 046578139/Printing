@@ -123,6 +123,13 @@ def test_interfaces():
         check(w >= 3 * P.NOZZLE * 0.95,
               "%s wall %.2f is under three perimeters" % (name, w))
 
+    check(P.GAUGE_STEP <= P.FIT_PRESS * 2,
+          "gauge step %.2f cannot resolve a %.2f press fit"
+          % (P.GAUGE_STEP, P.FIT_PRESS))
+    check((P.GAUGE_COUNT - 1) / 2 * P.GAUGE_STEP >= 1.0,
+          "gauge ladder only spans +/-%.2f - too narrow to bracket an "
+          "unverified nominal" % ((P.GAUGE_COUNT - 1) / 2 * P.GAUGE_STEP))
+
     # Texture and mark must not cut through the cap face.
     check(P.TEX_DEPTH < P.CAP_FACE_T * 0.5, "grip texture is too deep")
     check(P.MARK_DEPTH < P.CAP_FACE_T * 0.5, "centre mark is too deep")
@@ -162,22 +169,56 @@ def test_shroud():
           "kill flash pocket overlaps the objective bezel")
 
     if P.SHROUD_SLOTS:
-        check(P.SLOT_LEN < P.SHROUD_GRIP_LEN,
-              "collet slots (%.1f) run past the grip section (%.1f) and would "
-              "open the kill flash seat" % (P.SLOT_LEN, P.SHROUD_GRIP_LEN))
         import math as _m
-        r_mid = (P.SHROUD_BORE / 2 + P.SHROUD_OD / 2) / 2
+        check(P.SLOT_LEN < P.COLLET_LEN < P.SHROUD_GRIP_LEN,
+              "slot %.1f / collet %.1f / grip %.1f are out of order - the "
+              "collet would open the kill flash seat"
+              % (P.SLOT_LEN, P.COLLET_LEN, P.SHROUD_GRIP_LEN))
+        check(P.SLOT_LEN + P.SLOT_KEYHOLE_D / 2 <= P.COLLET_LEN + 1e-9,
+              "keyhole reaches Z=%.2f, past the collet section at %.2f"
+              % (P.SLOT_LEN + P.SLOT_KEYHOLE_D / 2, P.COLLET_LEN))
+        check(P.SLOT_KEYHOLE_D > P.SLOT_W,
+              "keyhole is not larger than the slot, so it arrests nothing")
+
+        # The finger has to be a spring. Compliance goes as t^3/L^3; below
+        # about L/t = 3 it behaves as a short plate and the collet buys
+        # nothing over a solid ring.
+        lt = P.SLOT_LEN / P.COLLET_WALL
+        check(lt >= 3.0,
+              "collet finger L/t is %.2f - too stubby to flex; thin "
+              "COLLET_WALL or lengthen SLOT_LEN" % lt)
+        check(P.COLLET_WALL >= 3 * P.NOZZLE * 0.95,
+              "collet finger wall %.2f is under three perimeters" % P.COLLET_WALL)
+        check(P.COLLET_OD < P.SHROUD_OD,
+              "collet OD is not relieved below the full wall")
+
+        r_mid = (P.SHROUD_BORE / 2 + P.COLLET_OD / 2) / 2
         for i in range(P.SHROUD_SLOTS):
             a = _m.radians(45.0 + 360.0 * i / P.SHROUD_SLOTS)
             probe(m, "shroud slot %d open" % i,
                   (r_mid * _m.cos(a), r_mid * _m.sin(a), P.SLOT_LEN / 2), False)
-            probe(m, "shroud seat solid above slot %d" % i,
-                  (r_mid * _m.cos(a), r_mid * _m.sin(a), shroud.Z_KF + 2.5), True)
-        # Between slots there must still be real wall.
+            probe(m, "shroud keyhole %d" % i,
+                  (r_mid * _m.cos(a), r_mid * _m.sin(a), P.SLOT_LEN), False)
+            probe(m, "shroud solid above collet %d" % i,
+                  (r_mid * _m.cos(a), r_mid * _m.sin(a), P.COLLET_LEN + 0.4), True)
+        # Finger material must survive between slots.
         a = _m.radians(45.0 + 180.0 / P.SHROUD_SLOTS)
-        probe(m, "shroud wall between slots",
+        probe(m, "shroud finger between slots",
               (r_mid * _m.cos(a), r_mid * _m.sin(a), P.SLOT_LEN / 2), True)
-        removed = P.SHROUD_SLOTS * P.SLOT_W / (_m.pi * P.SHROUD_OD)
+
+        # The eight axial edges the slots leave in the bore must be broken -
+        # square ones scrape the objective bezel on every install.
+        rb = P.SHROUD_BORE / 2
+        th = _m.asin((P.SLOT_W / 2) / rb)
+        for i in range(P.SHROUD_SLOTS):
+            a = _m.radians(45.0 + 360.0 * i / P.SHROUD_SLOTS)
+            for sgn in (1, -1):
+                e = a + sgn * th
+                probe(m, "shroud bore edge %d%+d broken" % (i, sgn),
+                      ((rb + 0.35) * _m.cos(e), (rb + 0.35) * _m.sin(e),
+                       P.SLOT_LEN / 2), False)
+
+        removed = P.SHROUD_SLOTS * P.SLOT_W / (_m.pi * P.COLLET_OD)
         check(removed < 0.20,
               "collet slots remove %.0f%% of the grip circumference" % (removed * 100))
 

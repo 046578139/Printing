@@ -104,4 +104,196 @@ print and removes all the guesswork.
 
 ## Material selection
 
-See the next section — being finalised.
+Short version: **you already own the right material for the two parts that
+grip the optic. Buy one spool of ASA Basic (~$30) for the other two.**
+
+| Part | Material | Have it? |
+|---|---|---|
+| 01 collar | **PAHT-CF** | yes |
+| 02 kill flash housing | **PAHT-CF** | yes |
+| 03 kill flash insert | **ASA Basic** | order |
+| 04 flip cap | **ASA Basic** | order |
+| gauges (coarse) | **PLA Basic** | — |
+| gauges (fine) | **the production filament** | — |
+
+No single material wins all four parts. Every attempt to claim one — ASA for
+the set, PET-CF for the set, PAHT-CF for the set — failed an adversarial
+review. Split it.
+
+### Why PAHT-CF for the collar and housing
+
+**Thermal expansion match to the aluminium bezel.** This is the term that
+decides it, and it is the one nobody thinks about. Aluminium is ~23 ppm/K.
+Fibre-filled grades run 25–35 ppm/K in the hoop direction; every *unfilled*
+polymer — ASA, ABS, PC, PETG, PLA — runs 60–95. Over a −20 °C to +60 °C
+service span an unfilled shroud gains or loses **0.06–0.10 mm** of
+interference. The whole design fit is 0.15 mm. A fibre-filled one moves
+~0.01 mm. For plastic clamped on metal, fibre fill is not a strength choice,
+it is a dimensional requirement — and it disqualifies unfilled materials for
+these two parts outright.
+
+**Ductility across layers at the collet roots.** The housing prints
+front-face-down, so the collet fingers bend *across* layer lines and Z
+properties govern, not the headline X-Y numbers. PAHT-CF: ~5.2 % Z
+elongation. PET-CF: ~2.4 %. On a notched feature that cycles every time you
+pull the shroud to clean the kill flash, that is the difference between a
+part that flexes and one that snaps.
+
+**Chemistry and heat.** Semi-crystalline polyamide is the only class here
+with real resistance to DEET, CLP and sunscreen esters — and the housing is
+the one part under *permanent* strain, which is the textbook precondition
+for environmental stress cracking. HDT ~170 °C makes a closed summer vehicle
+a non-event. PET-CF's Tg is ~75 °C, so as-printed it sits essentially *at*
+its glass transition under sustained collet load, and you cannot anneal it
+without destroying the bore.
+
+**The tradeoff being accepted:** PAHT-CF absorbs moisture (~0.88 %), which
+grows the bore roughly 0.03–0.06 mm from dry to equilibrium over 2–3 weeks.
+That is real. It is also a *calibration* cost rather than a defect, and it
+cancels completely if you gauge in conditioned PAHT-CF — see
+[MEASUREMENTS.md](MEASUREMENTS.md). Trading a reversible, measurable offset
+for PET-CF's irreversible creep near Tg is the right call for field gear.
+
+**Do not use the PPA-CF for the housing when it arrives.** It is a fine
+material, but it is another semi-crystalline polyamide with the same
+moisture discipline and no advantage here, and every production filament
+needs its own gauge calibration. Save yourself a second calibration.
+
+### Why ASA for the kill flash and cap
+
+**Kill flash — this one is not close.** `KF_WALL` is a 0.45 mm *single
+extrusion*, which needs a 0.4 mm nozzle. Bambu's guidance for every CF grade
+is a 0.6 mm hardened nozzle to avoid fibre clogs. At 0.45 mm the chopped
+fibre bundles are the same order as the wall itself — the filler stops being
+reinforcement and becomes a defect population spread over ~81 cells and
+~14 m of single-wall path per part. Unfilled is the materially correct
+answer. UV matters most here too: photo-oxidation is skin-depth limited and
+a 0.45 mm wall cannot afford to lose 100 µm. ASA's acrylate rubber has no
+butadiene to photo-oxidise. Treat the insert as a consumable and reprint it
+every year or two.
+
+**Cap — the only genuinely impact-loaded part.** ASA publishes ~19.6 kJ/m²
+notched Charpy: roughly 2.3× PET-CF's X-Y figure and 4× its Z figure. Bambu
+publishes *no* notched figure for PAHT-CF at all, and a daily-pried thumb
+tab is not something to spec on a missing number. ASA is also unfilled, so
+it cannot abrade the register or shed fibre near the glass, and its lower
+modulus closes quieter — which matters at night. `CAP_SKIRT_BORE` has
+0.35 mm of clearance, so ASA's higher expansion is irrelevant here.
+
+**If you would rather not order anything:** PETG is an acceptable fallback
+for both of these. It gives up UV life on the insert and impact on the cap,
+but it will work, it needs no hardened nozzle, and you likely have it.
+
+### Carbon fibre against your objective — read this
+
+This was **not** cleared. The comfortable argument ("CF is softer than
+anodising") was refuted three ways: it contradicts Bambu's own mandatory
+hardened-nozzle requirement, it ignores that in mud and sand the *polymer*
+is the grit-embedding member, and it says nothing about the carbon/aluminium
+galvanic couple in salt and rain.
+
+Two mitigations, both cheap:
+
+1. **Line the collar bore** with 0.13 mm self-adhesive PTFE or UHMW tape.
+   Non-conductive (kills the galvanic loop), slippery, inert, sacrificial.
+   Set `LINER_T = 0.13` in `params.py` and the bore opens to suit. The collar
+   is the higher-risk part — it clamps 11 mm of barrel under sustained screw
+   load.
+2. **The housing's bore edges are already broken in CAD.** The four collet
+   slots used to leave eight square axial edges that would scrape the full
+   grip length of the bezel on every install; `SLOT_EDGE_BREAK` now relieves
+   them. Nothing for you to do, but do not set it to zero.
+
+Never bead-blast a bore. Leave it as printed.
+
+**No TPU liner.** Abrasive embeds in the softer member and laps the harder
+one, so a TPU sleeve in mud becomes a grit-charged lap against your bezel.
+It also has 150–200 ppm/K expansion and heavy compression set. PTFE is soft
+*and* slippery; TPU is only soft.
+
+### Why PLA and not PETG for prototypes
+
+PETG is the intuitive choice and it is the wrong one, for two specific
+reasons:
+
+- **Stiffness.** Your acceptance test is a hand-felt seating force, and
+  collet force scales with modulus. PETG (~2050 MPa) under-reports seating
+  force against PAHT-CF (~4120 MPa) by about half. PLA Basic (~2750 MPa) is
+  off by a third. PLA-CF (~3950 MPa) is within 4 %.
+- **Failure mode.** PETG is ductile — at over-interference it *yields* and
+  then reports "fits fine". PAHT-CF and PET-CF crack. A proxy that cannot
+  reproduce the production failure mode cannot validate margin against it.
+  PLA is brittle and fails the way the real part will.
+
+PLA is also the lowest-shrink, no-drying, no-hardened-nozzle material on the
+shelf, which is exactly what a measurement artifact should be.
+
+If you want one high-fidelity check before committing nylon, print a single
+housing in **PLA-CF**: within 4 % of PAHT-CF's modulus, fails brittle, and
+genuinely matte so the same print also reads out glint and whether the
+0.45 mm honeycomb resolves.
+
+### What would change this
+
+Stated plainly, because some of it is inference rather than published data:
+
+- **PET-CF takes the housing back** if you condition a PAHT-CF ring and a
+  PET-CF ring side by side for a month and the PAHT-CF bore has moved more
+  than ~0.06 mm. The case rests on the swell being fibre-restrained in the
+  hoop direction; Bambu publishes no dimensional-change coefficient, so that
+  is inferred.
+- **PET-CF also wins** if you decide you will essentially never remove the
+  housing. The argument leans on the fingers cycling.
+- **PAHT-CF takes the cap** if Bambu ever publishes a notched Charpy for it
+  above ~15 kJ/m². Cheap test that settles it yourself: freeze one of each
+  overnight at −20 °C and break the thumb tabs by hand. Nobody publishes
+  low-temperature impact figures for these, so that is the only data that
+  will ever exist.
+
+## Settings by material
+
+### PAHT-CF — collar and housing
+
+| Setting | Value |
+|---|---|
+| Nozzle | **0.4 mm hardened steel, mandatory.** Not a high-flow hotend — a CF clog there is effectively unclearable |
+| Nozzle / bed | 280 °C / 100 °C, textured PEI |
+| Chamber | **60–65 °C, actively heated.** This is what drives interlayer strength, which is exactly what the collet roots need |
+| Drying | **80 °C for 8–12 h before, and keep it dry during.** Wet nylon means poor layer adhesion at the slot roots — the one place you cannot afford it |
+| Wall loops | **5** — the grip section is load-bearing and Z-loaded |
+| Part cooling | 20–30 % max |
+| Speed | ≤100 mm/s outer walls; slow through the collet |
+| Seam | Aligned, **forced off the collet slots and the pinch lug** — a seam at a slot root is where it cracks |
+| Brim | **Yes on the housing.** Its first layer is a ~550 mm² annulus carrying a tall part, and it is the surface that sets `REG_OD` |
+
+### ASA Basic — kill flash and cap
+
+| Setting | Value |
+|---|---|
+| Nozzle | 0.4 mm standard — **no hardened nozzle needed**, the only fieldable material here that can say that |
+| Nozzle / bed | 255 °C / 100 °C, textured PEI |
+| Chamber | 50–60 °C |
+| Drying | 80 °C for 6–8 h. Not needed during the print |
+| Part cooling | **0–15 % on the cap** — styrenics delaminate and warp with fan |
+| Brim | **Yes on the cap** |
+
+**The honeycomb has one genuine conflict:** ASA wants almost no fan, but the
+insert's layers are short (~560 mm of single-wall path) and need to set
+before the next one lands. Do not solve it with the fan. **Put 4–6 inserts
+on the plate at once** — that multiplies layer time by 4–6× and lets you
+keep the fan at 20–30 % in a hot chamber. Also drop the speed to 30–40 mm/s;
+this part has no reason to be fast.
+
+### PLA Basic — prototypes and coarse gauges
+
+| Setting | Value |
+|---|---|
+| Nozzle / bed | 220 °C / 55 °C |
+| Chamber | **Off, door open** — a hot chamber heat-creeps PLA in the extruder |
+| Drying | none |
+| Layer / walls / infill | **match your production settings exactly**, or the gauge means nothing |
+| Part cooling | 100 % |
+
+Honeycomb prints beautifully in PLA Basic — it is the best thin-wall
+material of the lot, which is why it is the right proxy for checking whether
+the cells resolve.

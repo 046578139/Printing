@@ -42,17 +42,47 @@ Also worth checking and telling me about:
 
 ## Step 2 — print the gauges
 
+The gauge is a **null measurement**, and that is the whole trick. Print the
+gauge in the same material, on the same plate, with the same first-layer
+settings as the real part, and every offset — shrinkage, die swell, hole
+undersize, moisture swell — cancels *identically*. You never have to know
+what any of them are, and you never have to guess at `BORE_BIAS`.
+
+That means two passes, not one.
+
+### Pass 1 — coarse, in PLA Basic
+
 ```
 python3 build.py
 ```
 
-Print `05_gauge_shroud.stl` and `06_gauge_collar.stl`. Roughly 20 minutes
-each in PLA, and PLA is the right material here — the gauges are throwaway
-and PLA is the most dimensionally honest thing on the shelf.
+Print `05_gauge_shroud.stl` and `06_gauge_collar.stl`. About 20 minutes
+each. PLA is right here: lowest shrink, no drying, no hardened nozzle, and
+the most dimensionally honest material on the shelf. This pass brackets the
+real diameter and confirms seating depth, cord routing and IPD clearance.
 
-**Print them in the same material, on the same plate type, at the same
-layer height you will use for the real parts if you can.** A gauge that was
-printed differently from the part is measuring the wrong thing.
+Note the winning ring on each ladder.
+
+### Pass 2 — fine, in the production filament
+
+This is the one that actually sets the number.
+
+```
+python3 build.py gauge --nominal <coarse winner> --step 0.05 --count 5
+```
+
+Print it in **the exact filament you will produce in**, at your production
+settings. About 15 g and 20 minutes.
+
+**If that filament is PAHT-CF (or any nylon), you have to condition it
+before you read it.** Nylon absorbs moisture and grows; a ring measured at
+48 hours is not its final size. Diffusion through the wall takes roughly
+12 days to reach 90 %. Leave it at ambient for **2–3 weeks** before you
+judge the fit. The gauge wall is 2.60 mm and the housing wall is 3.40 mm, so
+they equilibrate at different rates — give both the full soak.
+
+Skipping this is the single most likely way to end up with a housing that
+fits perfectly on the bench and is tight a month later.
 
 ## Step 3 — read the gauges
 
@@ -72,17 +102,38 @@ Note the number on the winning ring for each.
 Open `params.py` and set:
 
 ```python
-OBJ_FRONT_OD  = <shroud gauge winner>  - FIT_PRESS   # subtract 0.15
-OBJ_COLLAR_OD = <collar gauge winner>  - FIT_SLIP    # subtract 0.40
+OBJ_FRONT_OD  = <fine gauge winner>   - FIT_PRESS   # subtract 0.15
+OBJ_COLLAR_OD = <collar gauge winner> - FIT_SLIP    # subtract 0.40
+BORE_BIAS     = 0.00                                # leave it there
 ```
 
-The gauge rings are labelled with their **bore**, and the bores already
-include the design clearance, so you subtract it back out to recover the
-hardware diameter. Then rebuild:
+The rings are labelled with their **modelled bore**, which already includes
+the design allowance, so you subtract it back out to recover the hardware
+number. Leave `BORE_BIAS` at zero — because the fine gauge was printed in
+the production material, the material offset is already baked into the
+winning ring. Then rebuild:
 
 ```
 python3 build.py && python3 tests.py
 ```
+
+**Write down the filament SKU and lot number** next to whatever you commit.
+Bambu reformulates and discontinues filaments; a calibration pinned to a
+spool you cannot re-buy expires silently.
+
+## Step 5 — acceptance test
+
+Before you trust it in the field:
+
+1. Seat the housing. It should take firm thumb pressure.
+2. Invert the goggle and shake it. Nothing should move.
+3. **Heat soak it** — four hours at 70–80 °C, or an afternoon on a car
+   dashboard — and invert again.
+
+If it still holds after the heat soak, you are done. If it loosens, the
+material is creeping under the collet's sustained hoop load; that is what
+the PAHT-CF recommendation in [PRINTING.md](PRINTING.md) is guarding
+against.
 
 ## If you are between rings
 

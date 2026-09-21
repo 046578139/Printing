@@ -18,9 +18,11 @@ is then either a 45 degree chamfer or an upward-opening pocket, so it needs
 no support anywhere.
 """
 
+import math
+
 import params as P
 from lib.solids import (profile_revolve, cyl, chamfer_outer, bore_lead_in,
-                        union, rect2d, fillet2d, circle2d)
+                        union, rect2d)
 from lib.patterns import axial_flutes
 
 Z_KF    = P.SHROUD_GRIP_LEN                       # kill flash seat face
@@ -35,10 +37,22 @@ def build():
     rreg = P.REG_OD / 2.0
 
     # --- outer profile -----------------------------------------------------
-    # Square shoulder, not a cone: the cap has to land on a flat annulus or it
-    # rocks. Printed front-face-down this leaves a 1.3 mm cantilever ledge,
-    # which bridges cleanly without support.
+    # The OD is relieved over the collet so the fingers are thin enough to
+    # actually flex (see COLLET_WALL in params.py), then blended back out on a
+    # 45 degree cone. Square shoulder at the front, not a cone: the cap has to
+    # land on a flat annulus or it rocks. Printed front-face-down the shoulder
+    # leaves a 1.3 mm cantilever ledge, which bridges cleanly without support.
+    rcol = P.COLLET_OD / 2.0
     body = profile_revolve([
+        (0.0,  0.0),
+        (rcol, 0.0),
+        (rcol, P.COLLET_LEN),
+        (ro,   P.COLLET_LEN + P.COLLET_TAPER),
+        (ro,   Z_BODY),
+        (rreg, Z_BODY),
+        (rreg, Z_TOP),
+        (0.0,  Z_TOP),
+    ] if P.SHROUD_SLOTS else [
         (0.0,  0.0),
         (ro,   0.0),
         (ro,   Z_BODY),
@@ -64,7 +78,8 @@ def build():
         # rear lead-in so the shroud starts onto the bezel square, not cocked
         bore_lead_in(0.0, P.SHROUD_BORE, P.SHROUD_LEAD_IN, False),
         # rear outside edge
-        chamfer_outer(0.0, P.SHROUD_OD, 0.8, False),
+        chamfer_outer(0.0, P.COLLET_OD if P.SHROUD_SLOTS else P.SHROUD_OD,
+                      0.8, False),
         # front face edge of the register
         chamfer_outer(Z_TOP, P.REG_OD, P.REG_CHAMFER, True),
         # break the aperture edge so it does not shave the kill flash rim
@@ -73,17 +88,31 @@ def build():
     part = part - union(cuts)
 
     # --- collet slots ------------------------------------------------------
-    # Cut from the rear face forward, through the full wall, with a rounded
-    # end so there is no square corner for a crack to start from.
     if P.SHROUD_SLOTS:
-        slot2d = fillet2d(rect2d(P.SHROUD_OD + 6.0, P.SLOT_W), P.SLOT_END_R)
-        blade = slot2d.extrude(P.SLOT_LEN + P.SLOT_END_R)
-        # Keep only the outboard half so the slot does not cut clean across.
-        half = rect2d(P.SHROUD_OD + 8.0, P.SLOT_W + 2.0) \
-            .translate(((P.SHROUD_OD + 8.0) / 2.0, 0.0))
-        blade = blade ^ half.extrude(P.SLOT_LEN + P.SLOT_END_R)
-        blade = blade.translate([0, 0, -P.SLOT_END_R])
-        part = part - union([blade.rotate([0, 0, 45.0 + 360.0 * i / P.SHROUD_SLOTS])
+        span = P.SHROUD_OD + 8.0
+        rb = P.SHROUD_BORE / 2.0
+
+        # The slot itself: a radial cut from the rear face forward.
+        blade = rect2d(span, P.SLOT_W).translate((span / 2.0, 0.0)) \
+            .extrude(P.SLOT_LEN + 1.0).translate([0, 0, -1.0])
+
+        # Round crack-arrestor at the root. A slot ending in a flat face has
+        # two square corners at exactly the point of highest bending stress;
+        # a keyhole 1.5x the slot width spreads it.
+        keyhole = cyl(span, P.SLOT_KEYHOLE_D, seg=48).rotate([0, 90, 0]) \
+            .translate([0.0, 0.0, P.SLOT_LEN])
+
+        # Break the two axial edges each slot leaves in the BORE. Left square,
+        # these are eight sharp edges that scrape the full grip length of the
+        # objective bezel on every install - on a coated optic that is the one
+        # piece of damage this design could actually do.
+        th = math.asin(min(1.0, (P.SLOT_W / 2.0) / rb))
+        breaks = [cyl(P.SLOT_LEN + 1.0, P.SLOT_EDGE_BREAK, seg=32)
+                  .translate([rb * math.cos(sgn * th), rb * math.sin(sgn * th), -1.0])
+                  for sgn in (1.0, -1.0)]
+
+        cutter = union([blade, keyhole] + breaks)
+        part = part - union([cutter.rotate([0, 0, 45.0 + 360.0 * i / P.SHROUD_SLOTS])
                              for i in range(P.SHROUD_SLOTS)])
 
     # --- grip --------------------------------------------------------------

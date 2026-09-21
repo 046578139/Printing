@@ -4,8 +4,9 @@ Single source of truth for every dimension in the NVG objective cap set.
 Target hardware : NOCTIS mil-spec objective glass in Nocturn Industries
                   Raptor housings (AN/PVS-14 pattern objective interface).
 Retention       : 1/8 in (3.175 mm) shock cord.
-Prototype       : Bambu Lab H2C, PETG.
-Production      : carbon-filled (PET-CF / PAHT-CF).
+Prototype       : Bambu Lab H2C, PLA Basic (NOT PETG - see docs/PRINTING.md).
+Production      : PAHT-CF for the parts that grip the optic, ASA for the
+                  kill flash and cap. See docs/PRINTING.md for why.
 
 HOW TO USE THIS FILE
 --------------------
@@ -32,8 +33,18 @@ OBJ_COLLAR_LEN  = 12.00   # [VERIFY] usable straight length there
 # Global bore trim. Nudge this one number instead of editing each part:
 #   too tight  -> +0.10
 #   too loose  -> -0.10
-# Carbon-filled filaments shrink more than PETG; expect roughly +0.15 here
-# when moving from PETG to PET-CF / PAHT-CF.
+#
+# It does NOT have one value per "carbon filled". Chopped fibre SUPPRESSES
+# matrix shrinkage, so the direction depends on the matrix, not the filler:
+#
+#   PLA Basic  -> PAHT-CF (semi-crystalline)   +0.10   (range +0.05..+0.15)
+#   PLA Basic  -> PET-CF  (amorphous, CF)       0.00   (range  0.00..-0.05)
+#
+# Applying a blanket +0.15 to PET-CF would open a 38.00 bezel fit to 0.30 mm
+# of clearance, which is the "falls off in the field" failure, not the tight
+# one. Better still: print the FINE gauge in the production filament and
+# leave this at zero - see docs/MEASUREMENTS.md. The offset then cancels
+# identically and you never need to know it.
 BORE_BIAS       = 0.00
 
 
@@ -46,12 +57,27 @@ CORD_KNOT_D     = 8.50    # overhand knot in 1/8 in cord, for clearance pockets
 
 
 # ==========================================================================
-# FIT CLASSES  --  diametral clearance added to a bore
+# FIT CLASSES  --  diametral allowance added to a bore
 # ==========================================================================
+# Note what these actually are: FIT_PRESS is ADDED, so the modelled bore is
+# 0.15 mm LARGER than the bezel. The real interference comes from FDM hole
+# undersize, which is process- and material-determined, not from the CAD.
+# That is fine, because the gauge measures the DELIVERED bore rather than the
+# nominal - but it is exactly why no fit number ever transfers between
+# materials, and why you re-gauge for every production filament.
 FIT_PRESS       = 0.15    # shroud onto objective: hand-press, stays put
 FIT_SLIP        = 0.40    # collar onto objective: slides, then screw-clamped
-FIT_LOCATE      = 0.45    # cap over shroud register: drops on, self-centres
+FIT_LOCATE      = 0.35    # cap over shroud register: drops on, self-centres
 FIT_CLEAR       = 0.60    # general non-critical clearance
+
+# Optional sacrificial liner in the collar bore. Carbon fibre against a
+# coated objective barrel was NOT cleared: the polymer is the grit-embedding
+# member in mud, and carbon/aluminium is a galvanic couple in salt and rain.
+# 0.13 mm self-adhesive PTFE or UHMW tape is non-conductive, slippery, inert
+# and sacrificial. Set this to the tape thickness and the bore opens to suit.
+# Do NOT use TPU for this: abrasive embeds in the softer member and laps the
+# harder one, which turns the liner into a grit-charged lap against the barrel.
+LINER_T         = 0.00
 
 
 # ==========================================================================
@@ -82,10 +108,21 @@ SHROUD_LEAD_IN  = 1.20    # rear chamfer so it starts onto the lens squarely
 # a much wider diameter band at a fraction of the peak stress.
 # Set SHROUD_SLOTS = 0 for a solid ring if you would rather have the
 # stiffness and can hit the diameter exactly.
+# The finger has to be a SPRING, not a stubby plate. Radial compliance goes
+# as t^3/L^3, so at the original 3.4 mm wall over a 6.4 mm slot (L/t = 1.88)
+# the fingers barely moved and the collet bought almost nothing. There is not
+# enough bezel to lengthen the slot, so the OD is relieved over the collet
+# instead: 1.90 mm fingers at L/t = 3.16 are 4.7x more compliant, at no cost
+# in axial length.
 SHROUD_SLOTS    = 4
+COLLET_WALL     = 1.90
+COLLET_LEN      = 7.20    # < SHROUD_GRIP_LEN
+COLLET_OD       = SHROUD_BORE + 2 * COLLET_WALL
+COLLET_TAPER    = 0.80    # 45 deg blend back out to full wall
 SLOT_W          = 1.60
-SLOT_LEN        = 6.40    # < SHROUD_GRIP_LEN, so the kill flash seat stays a full ring
-SLOT_END_R      = 0.80    # rounded slot end: a square corner is a crack starter
+SLOT_LEN        = 6.00    # < COLLET_LEN, so the kill flash seat stays a full ring
+SLOT_KEYHOLE_D  = 2.40    # round crack-arrestor at the slot root, 1.5x slot width
+SLOT_EDGE_BREAK = 1.30    # breaks the 8 axial edges the slots leave in the bore
 
 # Front retaining flange: the kill flash loads from the REAR and seats here,
 # then the objective traps it. No snap ring, no glue, fully serviceable.
@@ -104,8 +141,8 @@ CORD_RADIUS     = 26.00
 CORD_EDGE_WALL  = 2.55   # material left outboard of the cord hole
 
 # Knurl band for grip with gloves.
-KNURL_START     = 3.20
-KNURL_LEN       = 6.40
+KNURL_START     = 8.60
+KNURL_LEN       = 4.00
 KNURL_DEPTH     = 0.55
 KNURL_COUNT     = 40
 KNURL_ANGLE     = 32.0
@@ -127,7 +164,7 @@ KF_CHAMFER      = 0.50
 # ==========================================================================
 # 01  RETENTION COLLAR
 # ==========================================================================
-COL_BORE        = OBJ_COLLAR_OD + FIT_SLIP + BORE_BIAS
+COL_BORE        = OBJ_COLLAR_OD + FIT_SLIP + BORE_BIAS + 2 * LINER_T
 COL_WALL        = 3.20
 COL_OD          = COL_BORE + 2 * COL_WALL
 COL_HEIGHT      = 11.00
@@ -189,8 +226,10 @@ MARK_DEPTH      = 0.70
 # ==========================================================================
 GAUGE_RING_H    = 7.00
 GAUGE_WALL      = 2.60
-GAUGE_STEP      = 0.50
-GAUGE_COUNT     = 9       # odd, so the nominal lands in the middle
+# GAUGE_STEP must resolve FIT_PRESS, or the ladder cannot measure the thing
+# it exists to measure. At the old 0.50 the step was 3.3x the press fit.
+GAUGE_STEP      = 0.25
+GAUGE_COUNT     = 11      # odd, so the nominal lands in the middle
 GAUGE_SPINE_W   = 4.00
 GAUGE_SPINE_T   = 2.00
 GAUGE_TEXT_H    = 4.20
@@ -209,4 +248,6 @@ def summary() -> str:
         "  cap OD                      : %6.2f" % CAP_OD,
         "  cord hole                   : %6.2f  (1/8 in cord)" % CORD_HOLE,
         "  cord line radius            : %6.2f  (collar ear == cap boss)" % CORD_RADIUS,
+        "  collet finger wall / L-t    : %6.2f / %.2f" % (COLLET_WALL, SLOT_LEN / COLLET_WALL),
+        "  bore liner allowance        : %6.2f" % LINER_T,
     ])

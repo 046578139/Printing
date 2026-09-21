@@ -77,12 +77,20 @@ front-face-down so the decorated face gets the plate finish and the grip
 texture is debossed rather than raised; the collar's nut trap is rotated
 point-up so it bridges itself.
 
-**The housing grip is a four-finger collet, not a solid ring.** A solid
-3.4 mm wall pressed at +0.15 onto an objective barrel has a narrow
-acceptance window and puts real hoop stress into an expensive optic. Four
-axial slots spread the same grip across a much wider diameter band at a
-fraction of the peak stress, and give the print somewhere to go instead of
-splitting. Set `SHROUD_SLOTS = 0` if you would rather have the stiffness.
+**The housing grip is a four-finger collet, and the fingers are thinner
+than the wall.** A solid ring pressed onto an objective barrel has a narrow
+acceptance window and puts real hoop stress into an expensive optic. But
+slots alone are not enough — radial compliance scales as `t³/L³`, and at the
+full 3.4 mm wall the fingers were a stubby plate (L/t = 1.88), not a spring.
+There is not enough bezel to lengthen the slots, so the OD is relieved over
+the collet instead: 1.90 mm fingers at L/t = 3.16 are **4.7× more
+compliant**, at no cost in axial length. Each slot ends in a round keyhole
+rather than a flat face, because the root is where it would crack.
+
+**The slots' bore edges are broken.** Four slots leave eight sharp axial
+edges in the bore that would otherwise scrape the full grip length of the
+bezel on every install. On a coated optic that is the one piece of real
+damage this design could do.
 
 **The cap seats on the housing shoulder, not the register.** The pocket is
 0.4 mm deeper than the register is tall, so the register locates and the
@@ -107,5 +115,16 @@ materials or to correct a uniform fit error.
 
 ## Material
 
-See **[docs/PRINTING.md](docs/PRINTING.md)** for the material choice and
-slicer settings for a Bambu H2C.
+| Part | Material |
+|---|---|
+| Collar, kill flash housing | **PAHT-CF** — expansion matched to the aluminium bezel, ductile across layers at the collet roots, immune to DEET and CLP |
+| Kill flash, flip cap | **ASA Basic** — the 0.45 mm honeycomb wall needs a 0.4 mm nozzle, and CF grades need 0.6 mm hardened; the cap is the only impact-loaded part |
+| Prototypes and coarse gauges | **PLA Basic** — not PETG, which is half the stiffness and yields where the production part cracks |
+| Fine gauge | **the production filament itself** |
+
+No single material wins all four parts. The reasoning, the tradeoffs being
+accepted, and full slicer settings are in
+**[docs/PRINTING.md](docs/PRINTING.md)**.
+
+Carbon fibre against a coated objective barrel was **not** cleared — line
+the collar bore with 0.13 mm PTFE tape and set `LINER_T = 0.13`.
