@@ -451,6 +451,41 @@ LAP_ROUND       = PINCH_ROUND
 LAP_ROOT_R      = PINCH_ROOT_R
 LAP_EDGE        = PINCH_EDGE
 
+
+# --------------------------------------------------------------------------
+# 01g - CINCH collar. Held by a zip tie or a loop of cord, not by the plastic.
+#
+# Every ring above asks PLA to be a spring, and PLA is bad at being a spring:
+# it holds on the day you fit it and stress-relaxes afterwards. This one asks
+# the plastic to do nothing but transmit load. A band around the outside does
+# the clamping, and a nylon zip tie pulled to ~40 N applies an order of
+# magnitude more than the 0.22 % seated strain a PLA ring can muster - and,
+# unlike the ring, you can re-tension it.
+#
+# The second thing it buys is that OBJ_COLLAR_OD stops mattering. The seat has
+# never been gauged, only triangulated. A 6 mm gap closes 6/pi = 1.91 mm of
+# diameter, so ONE part covers 37.20 down to 35.29 - wider than the whole
+# plausible spread. There is nothing to get wrong and nothing to sweep.
+CINCH_SLIP      = 0.30    # bore runs OVER the seat; the tie takes up the rest
+CINCH_BORE      = OBJ_COLLAR_OD + CINCH_SLIP + BORE_BIAS
+CINCH_GAP       = 6.00    # closes 6/pi = 1.91 mm of diameter
+CINCH_GAP_AT    = 90.0    # o'clock position of the gap; 90 = top, opposite
+                          # nothing, and away from both cord ears
+
+# Tie channel. The wall stays full thickness and the channel is formed by
+# standing the rest of the OD PROUD of it, rather than by grooving into a
+# 3.20 mm wall and leaving 1.70. Takes a 3.6 mm (40 lb) zip tie flush, a
+# 4.8 mm one slightly proud, or 1/8 in shock cord.
+CINCH_RIM       = 1.50    # how far the rims stand out past the channel floor
+CINCH_LOWER_Z   = 4.50    # full-OD section at the bottom; the ears live here
+CINCH_CHAN_Z    = 4.50    # channel width
+CINCH_RAMP      = 1.50    # 45 deg ramp back out - self-supporting, and it
+                          # stops the tie walking up off the channel
+CINCH_EAR_T     = 4.50    # ear thickness = the lower section, so the ears
+                          # never intrude into the channel
+CINCH_ROUND     = 1.80
+CINCH_EDGE      = 0.40
+
 # Cord ears, on every collar, are now circular bosses blended into the band
 # with a tapered stem - the same profile as the cap's, instead of the square
 # slabs that read as a different part from a different design.

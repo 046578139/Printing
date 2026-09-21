@@ -21,7 +21,8 @@ import trimesh
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import params as P
-from parts import killflash, snapcollar, pinchcollar, lapcollar
+from parts import (killflash, snapcollar, pinchcollar, lapcollar,
+                   cinchcollar)
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stl", "sweep")
 
@@ -80,6 +81,21 @@ SETS = {
         values=frange(35.6, 36.8, 0.3),
         name=lambda v, i: "pinch_%05.2f" % v,
         build=lambda v, i: pinchcollar.build(bore=v, label="%.1f" % v),
+    ),
+    # 01g, and the only sweep here that is not a fit hunt. Each rung closes
+    # 6/pi = 1.91 mm of diameter, so three of them cover 35.29 -> 41.20 with
+    # no gaps - which spans EVERY seat on the unit: the front bezel (36.70),
+    # the collar seat behind it, the fat ring further back, and the kill
+    # flash housing's own collet (40.60-41.00). Print all three, fit whichever
+    # lands on the seat you want to use.
+    "cinch-bore": dict(
+        what="01g cinch collar - three rungs covering every seat on the unit",
+        how="Slide it on, run a 3.6 mm zip tie round the channel, pull it "
+            "tight. Take the rung whose bore just clears your seat; the tie "
+            "takes up whatever is left. Bore is moulded into both cord ears.",
+        values=[37.2, 39.2, 41.2],
+        name=lambda v, i: "cinch_%05.2f" % v,
+        build=lambda v, i: cinchcollar.build(bore=v, label="%.1f" % v),
     ),
     "lap-bore": dict(
         what="01f lapped collar free bore",

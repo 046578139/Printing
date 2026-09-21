@@ -24,8 +24,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import params as P
 from lib.solids import box
-from parts import (collar, snapcollar, pinchcollar, lapcollar, shroud,
-                   killflash, cap)
+from parts import (collar, snapcollar, pinchcollar, lapcollar,
+                   cinchcollar, shroud, killflash, cap)
 
 FAILS = []
 CHECKS = [0]
@@ -609,6 +609,97 @@ def test_collar_lap():
     probe(m, "lap ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
 
 
+def test_collar_cinch():
+    """01g - the zip-tie collar. Nothing here is a spring.
+
+    The one thing that can silently ruin it is the tie channel being blocked
+    somewhere round the circumference - by a cord ear, most likely - because
+    a tie that cannot lie in the channel walks off the part under tension.
+    A single probe would not find that, so the channel is swept.
+    """
+    import math as _m
+    m = cinchcollar.build()
+    topology(m, "collar_cinch", expect_genus=2)
+
+    r_b = P.CINCH_BORE / 2.0
+    r_ch = r_b + P.COL_WALL
+    r_rim = r_ch + P.CINCH_RIM
+    z_mid = P.CINCH_LOWER_Z + P.CINCH_CHAN_Z / 2.0
+
+    def at(r, ang, z, sz=0.3):
+        a = _m.radians(ang)
+        return solid_at(m, (r * _m.cos(a), r * _m.sin(a), z), s=sz)
+
+    # THE CHANNEL, swept. Must be open at every angle, ears included.
+    blocked = [a for a in range(0, 360, 2)
+               if at(r_ch + P.CINCH_RIM / 2.0, a, z_mid)]
+    check(not blocked,
+          "tie channel is blocked at %s deg - the tie cannot seat and will "
+          "walk off the part under tension" % blocked[:6])
+    check(P.CINCH_EAR_T <= P.CINCH_LOWER_Z,
+          "ears are %.2f thick on a %.2f lower section - they intrude into "
+          "the channel" % (P.CINCH_EAR_T, P.CINCH_LOWER_Z))
+
+    # Rims proud on BOTH sides, or the tie has nothing to sit against.
+    check(at(r_rim - 0.3, 270, P.CINCH_LOWER_Z / 2.0),
+          "no lower rim - the tie will slide off the bottom")
+    check(at(r_rim - 0.3, 270, P.COL_HEIGHT - 0.3),
+          "no upper rim - the tie will slide off the top")
+    check(at(r_ch - 0.3, 270, z_mid), "channel floor is not solid")
+
+    # The wall is NOT grooved. Standing the rims proud is the whole point:
+    # a 1.50 groove into a 3.20 wall would leave 1.70 exactly where the band
+    # tension is trying to crush it.
+    check(abs((r_ch - r_b) - P.COL_WALL) < 1e-9,
+          "channel floor is %.2f from the bore, not the full %.2f wall"
+          % (r_ch - r_b, P.COL_WALL))
+    for name, v in (("tie rim", P.CINCH_RIM), ("channel width", P.CINCH_CHAN_Z)):
+        check(v >= P.NOZZLE * 1.1,
+              "%s is %.2f, only %.1fx a %.2f nozzle" % (name, v, v / P.NOZZLE, P.NOZZLE))
+    check(P.CINCH_CHAN_Z >= 3.6,
+          "channel is %.2f wide - a 3.6 mm zip tie will not lie in it"
+          % P.CINCH_CHAN_Z)
+    check(P.CINCH_RIM >= 1.4,
+          "rims only stand %.2f proud - a 1.4 mm thick tie stands above them"
+          % P.CINCH_RIM)
+    check(abs(P.CINCH_RAMP - P.CINCH_RIM) < 1e-9,
+          "the upper ramp is %.2f over %.2f of rise - not 45 deg, so it is "
+          "either an overhang or wasted height" % (P.CINCH_RIM, P.CINCH_RAMP))
+
+    # Range. The whole argument for this collar is that the ungauged seat
+    # stops mattering, so the range has to actually bracket the seat.
+    big, small = cinchcollar.clamp_range()
+    check(abs((big - small) - P.CINCH_GAP / _m.pi) < 1e-9,
+          "clamp range %.2f does not match a %.2f gap" % (big - small, P.CINCH_GAP))
+    check(small <= P.OBJ_COLLAR_OD <= big,
+          "the assumed seat %.2f is outside this collar's %.2f-%.2f range"
+          % (P.OBJ_COLLAR_OD, small, big))
+    check(big > P.OBJ_FRONT_OD,
+          "bore %.2f will not pass over the %.2f bezel to reach the seat"
+          % (big, P.OBJ_FRONT_OD))
+
+    # And it has to actually beat the spring ring it replaces, or there is
+    # no reason for it to exist.
+    g = cinchcollar.grip()
+    check(g["ratio"] > 3.0,
+          "a hand-tight tie is only %.1fx the spring ring - not worth the "
+          "hardware" % g["ratio"])
+    check(g["tie"]["torque"] > 1.0,
+          "%.2f Nm of twist resistance - you could still turn it by hand"
+          % g["tie"]["torque"])
+    check(g["yield_margin"] > 5.0,
+          "only %.0fx margin on PLA yield at the tie tension" % g["yield_margin"])
+    check(cinchcollar.grip(tension=178.0)["yield_margin"] > 3.0,
+          "over-tightening to the tie's rated tension would yield the collar")
+
+    # Gap open at 12, band solid at 6, cord holes open.
+    gr = r_b + P.COL_WALL / 2.0
+    check(not at(gr, P.CINCH_GAP_AT, 5.5), "the gap is not open")
+    check(at(gr, P.CINCH_GAP_AT + 180.0, 5.5), "the band is not solid opposite the gap")
+    probe(m, "cinch ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "cinch ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
+
+
 def test_shroud():
     m = shroud.build()
     topology(m, "shroud", expect_genus=1)
@@ -785,6 +876,7 @@ def test_assembly():
                     ("collar_lever", snapcollar.build_lever()),
                     ("collar_pinch", pinchcollar.build()),
                     ("collar_lap", lapcollar.build()),
+                    ("collar_cinch", cinchcollar.build()),
                     ("killflash", killflash.build()),
                     ("shroud", sh)):
         check(abs(m.bounding_box()[2]) < 1e-6,
@@ -824,6 +916,7 @@ def test_export_orientation():
                      ("collar_snap", snapcollar.build),
                      ("collar_pinch", pinchcollar.build),
                      ("collar_lap", lapcollar.build),
+                     ("collar_cinch", cinchcollar.build),
                      ("killflash", killflash.build)):
         m = fn()
         check(abs(build.orient(name, m).volume() - m.volume()) < 1e-6,
@@ -833,7 +926,7 @@ def test_export_orientation():
 def main():
     for fn in (test_interfaces, test_collar, test_collar_proto,
                test_collar_snap, test_collar_lever, test_collar_pinch,
-               test_collar_lap, test_shroud,
+               test_collar_lap, test_collar_cinch, test_shroud,
                test_killflash, test_cap, test_assembly,
                test_export_orientation):
         name = fn.__name__.replace("test_", "")
