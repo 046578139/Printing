@@ -119,11 +119,22 @@ LINER_T         = 0.00
 # ==========================================================================
 # PRINT PROCESS  --  0.4 mm nozzle, 0.2 mm layer
 # ==========================================================================
-NOZZLE          = 0.40
-LAYER           = 0.20
-WALL_MIN        = 1.20    # 3 perimeters, minimum for a load-bearing wall
-WALL_STD        = 2.40    # 6 perimeters, standard structural wall
-THIN_WALL       = 0.45    # single-extrusion wall (kill flash cells)
+# THE NOZZLE IS A DESIGN INPUT, not a slicer setting. Every thin feature in
+# this project is sized off it, so changing nozzle and rebuilding is the
+# supported way to move between machines - editing feature sizes by hand is
+# not.
+NOZZLE          = 0.60
+LAYER           = 0.30
+
+# A single-extrusion wall has to be at least ~1.1x the nozzle or the slicer
+# refuses it and the feature silently disappears. The first kill flash used
+# 0.45 mm cells on a 0.60 nozzle - 75% of nozzle diameter - and every cell
+# wall was dropped. The part came off the plate as a bare rim.
+THIN_WALL       = round(NOZZLE * 1.25, 2)   # reliable single pass
+WALL_MIN        = round(NOZZLE * 3, 2)      # 3 perimeters, load-bearing
+WALL_STD        = round(NOZZLE * 6, 2)      # 6 perimeters, structural
+# A deboss or emboss needs 3 layers to read cleanly, not 2.
+DETAIL_DEPTH    = round(LAYER * 3, 2)
 FIRST_LAYER_SQUISH = 0.00 # set to ~0.05 if your first layer elephant-foots
 
 # THE PLATE-FACE RULE. Never chamfer the face that goes down on the plate.
@@ -228,9 +239,9 @@ KF_THICK        = KF_RECESS_LEN - KF_SINK
 # single-extrusion walls and the slicer dropped every one of them - the part
 # came off the plate as a bare rim. Two full perimeters is the smallest wall
 # that is not at the mercy of thin-wall detection.
-KF_WALL         = 0.80
+KF_WALL         = THIN_WALL
 KF_CELL_AF      = 4.20
-KF_RIM          = 1.10
+KF_RIM          = round(NOZZLE * 2, 2)
 KF_CHAMFER      = 0.50    # TOP edge only - insert chamfer-first (see docs)
 # Open-area fraction ~= (AF/(AF+wall))^2 ~= 0.68
 # Cutoff angle      ~= atan(AF/THICK)     ~= 47 deg off-axis
@@ -345,13 +356,13 @@ TAB_UNDERCUT    = 1.80
 
 # Grip texture panels at 12 and 6 o'clock.
 TEX_CELL        = 2.60
-TEX_DEPTH       = 0.70
-TEX_WALL        = 0.80
+TEX_DEPTH       = DETAIL_DEPTH
+TEX_WALL        = round(NOZZLE * 1.6, 2)
 
 # Centre mark. Generic chevron/mountain deboss - swap or disable freely.
 MARK_ENABLE     = True
 MARK_W          = 18.00
-MARK_DEPTH      = 0.60
+MARK_DEPTH      = DETAIL_DEPTH
 
 
 # ==========================================================================
@@ -366,7 +377,7 @@ GAUGE_COUNT     = 11      # odd, so the nominal lands in the middle
 GAUGE_SPINE_W   = 4.00
 GAUGE_SPINE_T   = 2.00
 GAUGE_TEXT_H    = 4.20
-GAUGE_TEXT_D    = 0.60
+GAUGE_TEXT_D    = DETAIL_DEPTH
 GAUGE_PITCH_PAD = 3.00
 
 

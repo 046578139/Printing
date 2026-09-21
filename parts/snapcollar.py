@@ -30,6 +30,7 @@ import numpy as np
 import params as P
 from lib.solids import (tube, cyl, poly, rect2d, fillet2d, round2d, union,
                         SEG, bore_lead_in, chamfer_outer)
+from lib.text3d import text_2d
 from manifold3d import Manifold, CrossSection
 
 
@@ -100,13 +101,24 @@ def _sector(angle: float, r: float, start: float) -> CrossSection:
     return poly(pts)
 
 
-def _ear(angle: float, r_out: float, ear_proj: float) -> Manifold:
+def _ear(angle: float, r_out: float, ear_proj: float,
+         label: str = None) -> Manifold:
     x0, x1 = r_out - 2.5, r_out + ear_proj
     prof = fillet2d(rect2d(x1 - x0, P.EAR_W)
                     .translate(((x0 + x1) / 2.0, 0.0)), P.EAR_FILLET)
+    ear = prof.extrude(P.EAR_T)
     hole = cyl(P.EAR_T + 2.0, P.CORD_HOLE, seg=48) \
         .translate([P.CORD_RADIUS, 0.0, -1.0])
-    return (prof.extrude(P.EAR_T) - hole).rotate([0, 0, angle])
+    ear = ear - hole
+
+    # A sweep of five rings 0.4 mm apart is unidentifiable once it is off
+    # the plate, so each one carries its own bore size.
+    if label:
+        txt = text_2d(label, 2.60)
+        if not txt.is_empty():
+            ear = ear - txt.rotate(90).extrude(0.8) \
+                .translate([x0 + (x1 - x0) * 0.33, 0.0, P.EAR_T - 0.5])
+    return ear.rotate([0, 0, angle])
 
 
 def _paddle(r_out):
@@ -123,7 +135,7 @@ def _paddle(r_out):
     return round2d(stem + head, P.LEVER_ROUND)
 
 
-def build_lever():
+def build_lever(bore: float = None, label: str = None):
     """01d - circlip-style collar, expanded by hand and slid on axially.
 
     Wraps SNAP_LEVER_WRAP, far past what could ever be pushed on radially.
@@ -131,7 +143,7 @@ def build_lever():
     more of the circumference and still take LESS strain to fit than the
     push-on version.
     """
-    bore = P.SNAP_LEVER_BORE
+    bore = P.SNAP_LEVER_BORE if bore is None else bore
     r_out = bore / 2.0 + P.COL_WALL
     od = 2 * r_out
     ear_proj = P.CORD_RADIUS + P.CORD_HOLE / 2 + P.CORD_EDGE_WALL - r_out
@@ -152,7 +164,8 @@ def build_lever():
                pad.rotate([0, 0, 270.0 + gap_deg / 2.0 + off])]
 
     part = union([band] + paddles
-                 + [_ear(0.0, r_out, ear_proj), _ear(180.0, r_out, ear_proj)])
+                 + [_ear(0.0, r_out, ear_proj, label),
+                    _ear(180.0, r_out, ear_proj, label)])
 
     part = part - cyl(P.COL_HEIGHT + 4.0, bore, seg=SEG).translate([0, 0, -2.0])
     # Top edge breaks only - the bottom is the plate face. See params.py.
@@ -163,15 +176,15 @@ def build_lever():
     return part
 
 
-def build():
-    bore = P.SNAP_BORE
+def build(bore: float = None, label: str = None):
+    bore = P.SNAP_BORE if bore is None else bore
     r_out = bore / 2.0 + P.COL_WALL
     od = 2 * r_out
     ear_proj = P.CORD_RADIUS + P.CORD_HOLE / 2 + P.CORD_EDGE_WALL - r_out
 
     band = tube(P.COL_HEIGHT, od, bore)
-    part = union([band, _ear(0.0, r_out, ear_proj),
-                  _ear(180.0, r_out, ear_proj)])
+    part = union([band, _ear(0.0, r_out, ear_proj, label),
+                  _ear(180.0, r_out, ear_proj, label)])
 
     big = od + 20.0
     gap_deg = 360.0 - P.SNAP_WRAP

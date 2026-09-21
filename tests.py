@@ -84,9 +84,37 @@ def test_interfaces():
     check(P.KF_RECESS_LEN - P.KF_THICK >= 0.10,
           "only %.2f mm of sink - too close to proud"
           % (P.KF_RECESS_LEN - P.KF_THICK))
-    check(P.KF_WALL >= 2 * P.NOZZLE * 0.98,
-          "kill flash wall %.2f is under two full extrusions at a %.2f "
-          "nozzle - the slicer will drop the cells" % (P.KF_WALL, P.NOZZLE))
+    # MINIMUM FEATURE AUDIT. Every thin feature against the nozzle. A wall
+    # under ~1.1x nozzle cannot be extruded at all and the slicer silently
+    # omits it - which is exactly how the first kill flash came off the
+    # plate as a bare rim: 0.45 mm cells on a 0.60 nozzle, 75 % of nozzle
+    # diameter. This is the single most useful test in the file.
+    FEATURES = (
+        ("collet finger",  P.COLLET_WALL),
+        ("kill flash rim", P.KF_RIM),
+        ("kill flash cell wall", P.KF_WALL),
+        ("cap skirt wall", P.CAP_SKIRT_WALL),
+        ("cap face",       P.CAP_FACE_T),
+        ("collar band",    P.COL_WALL),
+        ("shroud wall",    P.SHROUD_WALL),
+        ("collet slot",    P.SLOT_W),
+        ("slot keyhole",   P.SLOT_KEYHOLE_D),
+        ("slot edge break", P.SLOT_EDGE_BREAK),
+        ("texture groove", P.TEX_WALL),
+        ("cord hole",      P.CORD_HOLE),
+        ("ear thickness",  P.EAR_T),
+    )
+    for name, v in FEATURES:
+        check(v >= P.NOZZLE * 1.1,
+              "%s is %.2f mm, only %.1fx a %.2f nozzle - the slicer will "
+              "drop it" % (name, v, v / P.NOZZLE, P.NOZZLE))
+
+    # Debossed detail needs real layers behind it, not one or two.
+    for name, d in (("texture", P.TEX_DEPTH), ("centre mark", P.MARK_DEPTH),
+                    ("gauge text", P.GAUGE_TEXT_D)):
+        check(d >= P.LAYER * 2.5,
+              "%s is %.2f mm deep, under 3 layers at %.2f - it will not read"
+              % (name, d, P.LAYER))
     check(P.SHROUD_APERTURE > 28.0,
           "aperture %.2f is tight enough to vignette PVS-14 pattern glass"
           % P.SHROUD_APERTURE)

@@ -1,6 +1,38 @@
 # Printing
 
-Bambu Lab H2C, 0.4 mm nozzle, 0.2 mm layer unless noted.
+Bambu Lab H2C. **The nozzle is a design input, not a slicer setting.**
+
+`params.py` currently declares `NOZZLE = 0.60`, `LAYER = 0.30` — the draft
+setup — and every thin feature in the project is derived from it: cell
+walls, texture grooves, rim widths, deboss depths. Change the nozzle at the
+machine and you must change it in `params.py` and rebuild, or features that
+were sized for the old one quietly fall below what the new one can extrude.
+
+`tests.py` runs a minimum-feature audit against `NOZZLE` on every build. It
+is the most useful test in the file: the first kill flash shipped with
+0.45 mm cell walls on a 0.60 nozzle — 75 % of nozzle diameter, below what
+can be extruded at all — and the slicer discarded every cell. The part came
+off the plate as a bare rim with stubs.
+
+### 0.6 / 0.3 draft vs 0.4 / 0.2
+
+Keep the 0.6 for fit work. Fits are diameter-driven, not resolution-driven,
+and as long as the gauge and the part are printed the same way the error
+cancels — that is the whole basis of the calibration. Draft speed is worth
+more than surface finish while the dimensions are still moving.
+
+Drop to 0.4 / 0.2 for:
+
+- **The cap**, if you want the grip texture to read as hexagons rather than
+  bumps and the centre mark to come out crisp. At 0.6 those features are
+  near the floor of what can be resolved, which is exactly how they printed.
+- **Anything final**, and anything in carbon fill — which needs a hardened
+  nozzle regardless.
+
+If you do switch, set `NOZZLE` and `LAYER` in `params.py` to match and
+rebuild. The kill flash cell wall, texture groove, rim and deboss depths all
+follow automatically. **Then re-gauge** — a different nozzle delivers a
+different bore, so the calibration does not carry across.
 
 ## Orientation
 
