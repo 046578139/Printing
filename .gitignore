@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+preview/_diag*
+preview/_d_*

@@ -1,0 +1,83 @@
+# Assembly
+
+Per eye: 1 collar, 1 kill flash housing, 1 kill flash insert, 1 flip cap,
+1 M3 socket head cap screw (16 mm), 1 M3 hex nut, and about 240 mm of
+1/8 in (3.175 mm) shock cord. Double it for a binocular.
+
+Every part is symmetric about the vertical plane, so there is **no left and
+right** — print two of each and they fit either pod.
+
+## Order of operations
+
+**1. Kill flash into the housing.**
+The insert loads from the **rear** of the housing (the wide end) and seats
+against the integral front flange. It should need light thumb pressure. If
+it drops through, the flange is missing or the aperture is wrong — stop and
+check. Nothing glues; the objective traps it in the next step.
+
+**2. Housing onto the objective.**
+Push the housing straight on, front flange forward. Go square — the rear
+lead-in chamfer will help, but a cocked start will gall the bezel. It should
+take firm thumb pressure and stay put when inverted. Do **not** force a fit
+that clearly does not want to go; go back to the gauge.
+
+**3. Collar onto the barrel.**
+Slide it on behind the housing with the two cord ears at 3 and 9 o'clock,
+ears facing **rearward**, and the pinch lugs at 6 o'clock. Confirm one more
+time that the band is not sitting on anything that turns when you focus.
+
+Fit the M3 screw from the right-hand lug (counterbored for the head) into
+the hex nut trap on the left. The nut pocket is oriented point-up so it
+prints without support; press the nut in with a flat blade before starting
+the screw.
+
+Snug it until the collar will not rotate under a firm hand twist. It does
+not need to be tight — you are clamping an optical assembly, not a
+suspension arm. If the gap closes completely before it grips, the bore is
+too big; if it grips with the gap barely closed, that is correct.
+
+**4. Cord.**
+Cut four pieces about 120 mm each. Per side, per eye:
+
+```
+  knot ── collar ear ──────── forward ──────── cap boss ── knot
+ (behind)                                              (in front)
+```
+
+- Thread from the rear: through the collar ear, forward, through the cap
+  boss from the back.
+- Tie a figure-eight in the tail behind the collar ear first.
+- Hold the cap closed on the housing, pull the front tail until the cord is
+  **just taut**, then pull about 3 mm more and tie the front knot there.
+  That pre-tension is what holds the cap shut.
+- Trim to ~8 mm and melt the ends.
+
+Repeat on the other side. Both cords should end up the same length or the
+cap will sit crooked.
+
+## Why the cap flips the way it does
+
+Both cord holes sit on the same radius (`CORD_RADIUS`, 26.00 mm), so the
+line between the two bosses is the hinge axis — and both boss holes lie
+**on** that axis. Rotating the cap about it does not change the cord length,
+so the bungee only has to stretch the 2.2 mm needed to lift the cap clear of
+the register. About 11 % strain on a 20 mm free length: well inside what
+1/8 in shock cord does happily, forever.
+
+That is also why nothing needs an anti-rotation key. The cap's orientation
+is set by the two cords, not by the register, so the housing is free to sit
+at any rotation on the objective.
+
+## Checks after assembly
+
+- Cap closes flat with no rock. If it rocks, the cap is bottoming on the
+  register instead of the housing shoulder — increase `CAP_SKIRT_DEPTH`.
+- Cap flips up and stays up.
+- Collar does not rotate under a firm twist.
+- Focus ring still turns freely through its whole range.
+- Nothing inside the housing touches the glass.
+
+## Service
+
+Pull the housing off and the kill flash drops out the back for cleaning.
+Nothing is bonded, and every fastener is a hardware-store M3.
