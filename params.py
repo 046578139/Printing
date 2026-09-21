@@ -32,13 +32,35 @@ OBJ_FRONT_OD    = 36.70   # [CONFIRMED in PLA on a 0.40 nozzle] re-gauge ladder
                           # 0.05 - less than predicted, but measured beats
                           # estimated. See docs/CALIBRATION.md.
 OBJ_FRONT_LEN   = 13.00   # [CONFIRMED] the bezel inserts the full bore depth
+# WHICH SEAT. The collar goes on the LOCKING COLLAR - the fixed band
+# immediately behind the focus ring - and NOT on the front bezel the housing
+# grips. Two reasons, and the second one is the stronger:
+#
+#  1. The bezel turns to focus and has a little wobble in it. Hanging the
+#     collar, the cord tension and the cap's weight off a part that has to
+#     rotate is asking for a stiff focus and a worn thread.
+#
+#  2. The cap's register on the housing is CIRCULAR, so nothing about it sets
+#     rotation. The cap's orientation is held entirely by the two cords, and
+#     the cords anchor to this collar. On the fixed locking collar, focusing
+#     just spins the housing underneath the cap and the thumb tab stays where
+#     you left it. On the bezel, every focus adjustment drags the cap's
+#     orientation round with it.
+#
+# The housing still presses on the bezel and so still turns with focus. That
+# is fine - it becomes the focus grip - but it is why the collar must not.
 OBJ_COLLAR_OD   = 36.90   # [TRIANGULATED, not yet gauged] Two oversized test
                           # prints agree: the 39.00 snap ring read ~2 mm loose
                           # and the 42.20 bolt-on ~5 mm loose, which both land
-                          # on a ~37.0 seat. So it is NOT much smaller than the
-                          # 36.75 front bezel - it is essentially the same
-                          # diameter. Confirm on the 30-42 ladder.
-OBJ_COLLAR_LEN  = 12.00   # [VERIFY] usable straight length there
+                          # on a ~37.0 seat. This was read as a barrel section;
+                          # now that the seat is known to be the locking collar
+                          # it may well be FATTER. 01g's cinch ladder brackets
+                          # 35.29-41.20 and settles it without a gauge.
+OBJ_COLLAR_LEN  = 12.00   # [VERIFY - and now the number that matters most]
+                          # The locking collar is a narrow band. If it is under
+                          # COL_HEIGHT the collar rides up onto the focus ring
+                          # and reintroduces exactly the binding it was moved
+                          # to avoid. 01g ships in two heights for this reason.
 
 # --------------------------------------------------------------------------
 # Bore calibration and material provenance
@@ -477,14 +499,21 @@ CINCH_GAP_AT    = 90.0    # o'clock position of the gap; 90 = top, opposite
 # 3.20 mm wall and leaving 1.70. Takes a 3.6 mm (40 lb) zip tie flush, a
 # 4.8 mm one slightly proud, or 1/8 in shock cord.
 CINCH_RIM       = 1.50    # how far the rims stand out past the channel floor
-CINCH_LOWER_Z   = 4.50    # full-OD section at the bottom; the ears live here
-CINCH_CHAN_Z    = 4.50    # channel width
-CINCH_RAMP      = 1.50    # 45 deg ramp back out - self-supporting, and it
-                          # stops the tie walking up off the channel
-CINCH_EAR_T     = 4.50    # ear thickness = the lower section, so the ears
-                          # never intrude into the channel
+CINCH_CHAN_Z    = 4.50    # channel width. The ramp back out is always equal
+                          # to CINCH_RIM so it sits at 45 deg - self-supporting,
+                          # and it stops the tie walking up off the channel.
+                          # Everything else in the stack, including the ear
+                          # thickness, falls out of the height: see
+                          # cinchcollar.stack(). The ears ARE the lower
+                          # section, so they can never intrude on the channel.
 CINCH_ROUND     = 1.80
 CINCH_EDGE      = 0.40
+# Short variant, for when the locking collar turns out to be a narrow band.
+# The channel stays wide enough for a 3.6 mm tie and the ears give up the
+# height instead - a cord anchor can afford to be thinner than a tie channel
+# can afford to be narrower.
+CINCH_SHORT_Z   = 9.00
+CINCH_SHORT_CHAN = 3.60
 
 # Cord ears, on every collar, are now circular bosses blended into the band
 # with a tapered stem - the same profile as the cap's, instead of the square

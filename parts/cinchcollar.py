@@ -59,7 +59,22 @@ from manifold3d import Manifold, CrossSection
 
 R_CH = P.CINCH_BORE / 2.0 + P.COL_WALL              # channel floor radius
 R_RIM = R_CH + P.CINCH_RIM                          # rim radius
-Z_CHAN = (P.CINCH_LOWER_Z, P.CINCH_LOWER_Z + P.CINCH_CHAN_Z)
+
+
+def stack(height: float = None) -> tuple:
+    """(lower section, channel, ramp, rim) for a given overall height.
+
+    The channel width is defended first and the ears give up the height,
+    because a cord anchor can afford to be thinner than a tie channel can
+    afford to be narrower - a 3.6 mm tie in a 3.0 mm channel rides on the
+    rims instead of in the groove, which is the one way this collar fails.
+    """
+    height = P.COL_HEIGHT if height is None else height
+    ramp = P.CINCH_RIM                 # 45 deg: rise must equal the offset
+    rim = 0.50
+    chan = P.CINCH_CHAN_Z if height >= 10.0 else P.CINCH_SHORT_CHAN
+    lower = height - chan - ramp - rim
+    return lower, chan, ramp, rim
 
 
 def clamp_range(bore: float = None, gap: float = None) -> tuple:
@@ -122,19 +137,20 @@ def _sector(angle: float, r: float, start: float) -> CrossSection:
     return poly(pts)
 
 
-def _profile(bore: float) -> list:
+def _profile(bore: float, height: float = None) -> list:
     """The (radius, z) section, revolved to make the band.
 
     Authored bottom-outward-up-inward-down. The bottom face is dead flat:
     a chamfer there is what made every ring in the first printed round come
     out ragged for its first few layers.
     """
+    h = P.COL_HEIGHT if height is None else height
+    lower, chan, ramp, _rim = stack(h)
     r_b = bore / 2.0
     r_ch = r_b + P.COL_WALL
     r_rim = r_ch + P.CINCH_RIM
-    z_lo = P.CINCH_LOWER_Z
-    z_hi = z_lo + P.CINCH_CHAN_Z
-    h = P.COL_HEIGHT
+    z_lo = lower
+    z_hi = z_lo + chan
     e = P.CINCH_EDGE
     return [
         (r_b, 0.0),
@@ -142,7 +158,7 @@ def _profile(bore: float) -> list:
         (r_rim, z_lo),                     # lower section - the ears live here
         (r_ch, z_lo),                      # step in; faces UP, self-supporting
         (r_ch, z_hi),                      # channel floor
-        (r_rim, z_hi + P.CINCH_RAMP),      # 45 deg ramp back out
+        (r_rim, z_hi + ramp),              # 45 deg ramp back out
         (r_rim, h - e),
         (r_rim - e, h),                    # top edge break
         (r_b + 0.8, h),                    # bore lead-in, fit it top-first
@@ -150,7 +166,8 @@ def _profile(bore: float) -> list:
     ]
 
 
-def _ear(angle: float, bore: float, label: str = None) -> Manifold:
+def _ear(angle: float, bore: float, thick: float,
+         label: str = None) -> Manifold:
     """Cord ear, straight out from the band at full boss width.
 
     A slice of the band is folded into the profile before rounding so the
@@ -162,25 +179,31 @@ def _ear(angle: float, bore: float, label: str = None) -> Manifold:
                        P.EAR_STEM_W, P.EAR_ROUND)
     band = (circle2d(2 * r_rim, SEG) - circle2d(2 * r_b, SEG)) \
         ^ _sector(60.0, 4 * r_rim, -30.0)
-    ear = round2d(prof + band, P.CINCH_ROUND).extrude(P.CINCH_EAR_T)
-    ear = ear - cyl(P.CINCH_EAR_T + 2.0, P.CORD_HOLE, seg=48) \
+    ear = round2d(prof + band, P.CINCH_ROUND).extrude(thick)
+    ear = ear - cyl(thick + 2.0, P.CORD_HOLE, seg=48) \
         .translate([P.CORD_RADIUS, 0.0, -1.0])
     if label:
         txt = text_2d(label, 2.40)
         if not txt.is_empty():
             ear = ear - txt.rotate(90).extrude(0.8) \
-                .translate([r_rim + 1.0, 0.0, P.CINCH_EAR_T - P.LAYER * 2])
+                .translate([r_rim + 1.0, 0.0, thick - P.LAYER * 2])
     return ear.rotate([0, 0, angle])
 
 
-def build(bore: float = None, gap: float = None, label: str = None):
+def build(bore: float = None, gap: float = None, label: str = None,
+          height: float = None):
     bore = P.CINCH_BORE if bore is None else bore
     gap = P.CINCH_GAP if gap is None else gap
+    height = P.COL_HEIGHT if height is None else height
+    lower = stack(height)[0]
     r_b = bore / 2.0
     r_rim = r_b + P.COL_WALL + P.CINCH_RIM
 
-    part = union([profile_revolve(_profile(bore), SEG),
-                  _ear(0.0, bore, label), _ear(180.0, bore, label)])
+    # Ear thickness IS the lower section, so the ears can never intrude into
+    # the tie channel however short the collar gets.
+    part = union([profile_revolve(_profile(bore, height), SEG),
+                  _ear(0.0, bore, lower, label),
+                  _ear(180.0, bore, lower, label)])
 
     # The gap. Cut as a slot of constant WIDTH rather than a sector, because
     # what has to close is a width, not an angle - and the number that gets
@@ -188,11 +211,11 @@ def build(bore: float = None, gap: float = None, label: str = None):
     span = r_rim + 8.0
     slot = poly([(-gap / 2.0, 0.0), (gap / 2.0, 0.0),
                  (gap / 2.0, span), (-gap / 2.0, span)]) \
-        .extrude(P.COL_HEIGHT + 4.0).translate([0.0, 0.0, -2.0])
+        .extrude(height + 4.0).translate([0.0, 0.0, -2.0])
     part = part - slot.rotate([0, 0, P.CINCH_GAP_AT - 90.0])
 
     # Re-cut the bore last: the ears overlap into it.
-    part = part - cyl(P.COL_HEIGHT + 4.0, bore, seg=SEG).translate([0, 0, -2.0])
+    part = part - cyl(height + 4.0, bore, seg=SEG).translate([0, 0, -2.0])
     return part
 
 

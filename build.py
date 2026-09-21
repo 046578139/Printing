@@ -39,6 +39,7 @@ PARTS = {
     "collar_lap": (lapcollar.build, 2, lapcollar.META),
     "collar_cinch": (cinchcollar.build, 2, cinchcollar.META),
     "shroud": (shroud.build, 1, shroud.META),
+    "shroud_solid": (lambda: shroud.build(slots=0), 1, shroud.META_SOLID),
     "killflash": (killflash.build, None, killflash.META),
     "cap": (cap.build, 2, cap.META),
 }
@@ -52,6 +53,7 @@ FILENAME = {
     "collar_lap": "01f_collar_lap",
     "collar_cinch": "01g_collar_cinch",
     "shroud": "02_killflash_housing",
+    "shroud_solid": "02b_killflash_housing_solid",
     "killflash": "03_killflash_insert",
     "cap": "04_flip_cap",
 }
@@ -70,7 +72,7 @@ def orient(name, man):
     dropped straight onto the plate."""
     if name == "cap":
         return _flip(man, P.CAP_T)            # decorated face down
-    if name == "shroud":
+    if name.startswith("shroud"):
         return _flip(man, shroud.TOTAL)       # front register down
     return man                                 # already plate-side-down
 

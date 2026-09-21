@@ -615,59 +615,78 @@ def test_collar_cinch():
     The one thing that can silently ruin it is the tie channel being blocked
     somewhere round the circumference - by a cord ear, most likely - because
     a tie that cannot lie in the channel walks off the part under tension.
-    A single probe would not find that, so the channel is swept.
+    A single probe would not find that, so the channel is swept, at both
+    heights the collar ships in.
     """
     import math as _m
-    m = cinchcollar.build()
-    topology(m, "collar_cinch", expect_genus=2)
 
     r_b = P.CINCH_BORE / 2.0
     r_ch = r_b + P.COL_WALL
     r_rim = r_ch + P.CINCH_RIM
-    z_mid = P.CINCH_LOWER_Z + P.CINCH_CHAN_Z / 2.0
 
-    def at(r, ang, z, sz=0.3):
-        a = _m.radians(ang)
-        return solid_at(m, (r * _m.cos(a), r * _m.sin(a), z), s=sz)
+    for height in (P.COL_HEIGHT, P.CINCH_SHORT_Z):
+        tag = "tall" if height >= 10.0 else "short"
+        m = cinchcollar.build(height=height)
+        topology(m, "collar_cinch(%s)" % tag, expect_genus=2)
+        lower, chan, ramp, rim = cinchcollar.stack(height)
+        z_mid = lower + chan / 2.0
 
-    # THE CHANNEL, swept. Must be open at every angle, ears included.
-    blocked = [a for a in range(0, 360, 2)
-               if at(r_ch + P.CINCH_RIM / 2.0, a, z_mid)]
-    check(not blocked,
-          "tie channel is blocked at %s deg - the tie cannot seat and will "
-          "walk off the part under tension" % blocked[:6])
-    check(P.CINCH_EAR_T <= P.CINCH_LOWER_Z,
-          "ears are %.2f thick on a %.2f lower section - they intrude into "
-          "the channel" % (P.CINCH_EAR_T, P.CINCH_LOWER_Z))
+        def at(r, ang, z, sz=0.3):
+            a = _m.radians(ang)
+            return solid_at(m, (r * _m.cos(a), r * _m.sin(a), z), s=sz)
 
-    # Rims proud on BOTH sides, or the tie has nothing to sit against.
-    check(at(r_rim - 0.3, 270, P.CINCH_LOWER_Z / 2.0),
-          "no lower rim - the tie will slide off the bottom")
-    check(at(r_rim - 0.3, 270, P.COL_HEIGHT - 0.3),
-          "no upper rim - the tie will slide off the top")
-    check(at(r_ch - 0.3, 270, z_mid), "channel floor is not solid")
+        check(abs(lower + chan + ramp + rim - height) < 1e-9,
+              "%s stack does not add up to %.2f" % (tag, height))
+        check(abs(m.bounding_box()[5] - height) < 1e-6,
+              "%s collar is not %.2f tall" % (tag, height))
 
-    # The wall is NOT grooved. Standing the rims proud is the whole point:
-    # a 1.50 groove into a 3.20 wall would leave 1.70 exactly where the band
+        # THE CHANNEL, swept. Open at every angle, cord ears included.
+        blocked = [a for a in range(0, 360, 2)
+                   if at(r_ch + P.CINCH_RIM / 2.0, a, z_mid)]
+        check(not blocked,
+              "%s: tie channel is blocked at %s deg - the tie cannot seat and "
+              "will walk off the part under tension" % (tag, blocked[:6]))
+
+        # Rims proud on BOTH sides, or the tie has nothing to sit against.
+        check(at(r_rim - 0.3, 270, lower / 2.0),
+              "%s: no lower rim - the tie slides off the bottom" % tag)
+        check(at(r_rim - 0.3, 270, height - 0.3),
+              "%s: no upper rim - the tie slides off the top" % tag)
+        check(at(r_ch - 0.3, 270, z_mid), "%s: channel floor not solid" % tag)
+
+        # A 3.6 mm tie has to LIE IN the channel, not ride on the rims. This
+        # is the constraint the short version is built around, and the ears
+        # are what give up height for it.
+        check(chan >= 3.6,
+              "%s: channel is %.2f wide - a 3.6 mm tie will not lie in it"
+              % (tag, chan))
+        check(lower >= 3.2,
+              "%s: ears are only %.2f thick - too thin to trust a shock cord "
+              "to" % (tag, lower))
+        check(abs(ramp - P.CINCH_RIM) < 1e-9,
+              "%s: %.2f of ramp over a %.2f offset is not 45 deg - either an "
+              "overhang or wasted height" % (tag, ramp, P.CINCH_RIM))
+
+        # Gap open, band solid opposite it, cord holes through.
+        gr = r_b + P.COL_WALL / 2.0
+        check(not at(gr, P.CINCH_GAP_AT, height / 2.0), "%s: gap not open" % tag)
+        check(at(gr, P.CINCH_GAP_AT + 180.0, height / 2.0),
+              "%s: band not solid opposite the gap" % tag)
+        probe(m, "cinch(%s) ear hole +X" % tag, (P.CORD_RADIUS, 0.0, 1.5), False)
+        probe(m, "cinch(%s) ear hole -X" % tag, (-P.CORD_RADIUS, 0.0, 1.5), False)
+
+    # The wall is NOT grooved. Standing the rims proud is the whole point: a
+    # 1.50 groove into a 3.20 wall would leave 1.70 exactly where the band
     # tension is trying to crush it.
     check(abs((r_ch - r_b) - P.COL_WALL) < 1e-9,
           "channel floor is %.2f from the bore, not the full %.2f wall"
           % (r_ch - r_b, P.COL_WALL))
-    for name, v in (("tie rim", P.CINCH_RIM), ("channel width", P.CINCH_CHAN_Z)):
-        check(v >= P.NOZZLE * 1.1,
-              "%s is %.2f, only %.1fx a %.2f nozzle" % (name, v, v / P.NOZZLE, P.NOZZLE))
-    check(P.CINCH_CHAN_Z >= 3.6,
-          "channel is %.2f wide - a 3.6 mm zip tie will not lie in it"
-          % P.CINCH_CHAN_Z)
     check(P.CINCH_RIM >= 1.4,
           "rims only stand %.2f proud - a 1.4 mm thick tie stands above them"
           % P.CINCH_RIM)
-    check(abs(P.CINCH_RAMP - P.CINCH_RIM) < 1e-9,
-          "the upper ramp is %.2f over %.2f of rise - not 45 deg, so it is "
-          "either an overhang or wasted height" % (P.CINCH_RIM, P.CINCH_RAMP))
 
     # Range. The whole argument for this collar is that the ungauged seat
-    # stops mattering, so the range has to actually bracket the seat.
+    # stops mattering, so the range has to actually bracket it.
     big, small = cinchcollar.clamp_range()
     check(abs((big - small) - P.CINCH_GAP / _m.pi) < 1e-9,
           "clamp range %.2f does not match a %.2f gap" % (big - small, P.CINCH_GAP))
@@ -678,8 +697,8 @@ def test_collar_cinch():
           "bore %.2f will not pass over the %.2f bezel to reach the seat"
           % (big, P.OBJ_FRONT_OD))
 
-    # And it has to actually beat the spring ring it replaces, or there is
-    # no reason for it to exist.
+    # It has to beat the spring ring it replaces, or there is no reason for
+    # it to exist.
     g = cinchcollar.grip()
     check(g["ratio"] > 3.0,
           "a hand-tight tie is only %.1fx the spring ring - not worth the "
@@ -692,12 +711,12 @@ def test_collar_cinch():
     check(cinchcollar.grip(tension=178.0)["yield_margin"] > 3.0,
           "over-tightening to the tie's rated tension would yield the collar")
 
-    # Gap open at 12, band solid at 6, cord holes open.
-    gr = r_b + P.COL_WALL / 2.0
-    check(not at(gr, P.CINCH_GAP_AT, 5.5), "the gap is not open")
-    check(at(gr, P.CINCH_GAP_AT + 180.0, 5.5), "the band is not solid opposite the gap")
-    probe(m, "cinch ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
-    probe(m, "cinch ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
+    # The collar must not be taller than the band it clamps, or it rides up
+    # onto the focus ring - which is the whole reason the seat moved.
+    check(P.CINCH_SHORT_Z < P.COL_HEIGHT,
+          "the short variant is not shorter than the standard one")
+    check(min(P.COL_HEIGHT, P.CINCH_SHORT_Z) <= P.OBJ_COLLAR_LEN,
+          "even the short collar is taller than the locking collar it clamps")
 
 
 def test_shroud():
@@ -809,6 +828,24 @@ def test_shroud():
         removed = P.SHROUD_SLOTS * P.SLOT_W / (_m.pi * P.COLLET_OD)
         check(removed < 0.20,
               "collet slots remove %.0f%% of the grip circumference" % (removed * 100))
+
+
+    # The collet is not decoration. It carries about a tenth of the grip on
+    # nearly half the bore length, and deleting it makes the press roughly
+    # 1.7x tighter - to fit AND to remove, on a coated objective. 02b exists
+    # for anyone who wants that; 02 must keep its slots.
+    solid = shroud.build(slots=0)
+    check(m.volume() < solid.volume(),
+          "02 is not lighter than the slotless 02b - it has lost its collet")
+    check(P.SHROUD_SLOTS >= 3,
+          "%d slots cannot open evenly - the bore goes out of round"
+          % P.SHROUD_SLOTS)
+    check(P.SLOT_LEN < P.COLLET_LEN <= P.SHROUD_GRIP_LEN,
+          "slot %.2f / collet %.2f / grip %.2f are out of order - the kill "
+          "flash seat must stay a full ring"
+          % (P.SLOT_LEN, P.COLLET_LEN, P.SHROUD_GRIP_LEN))
+    check(len(solid.decompose()) == 1 and solid.genus() == 1,
+          "02b is not a single clean shell")
 
 
 def test_killflash():

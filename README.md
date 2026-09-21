@@ -24,12 +24,15 @@ retained with 1/8 in shock cord.
 
 | File | Part | What it does |
 |---|---|---|
-| `stl/01f_collar_lap.stl` | **Collar, lapped — print this one** | The recorder mount's actual mechanism: the band wraps 414° so its two ends lap past each other, each carrying a finger tab. **Squeeze** the tabs together and the lap shortens, which makes the circle bigger. 2.6 N — the lightest squeeze of any collar here. No hardware, no tools — [how it works](docs/ASSEMBLY.md#01f-is-the-one-to-print). **Goes on BEFORE the housing.** |
+| `stl/sweep/cinchS_*.stl` | **Collar, cinch — print these** | Held by a **zip tie**, not by the plastic. 40 N of band tension against the 6 N a PLA spring ring manages, and it does not relax. Three bores covering 35.29–41.20 so the ungauged seat stops mattering; print all three, fit the one that lands. 9.00 mm tall so it clears a narrow locking collar. **Goes on BEFORE the housing.** |
+| `stl/01g_collar_cinch.stl` | Collar, cinch (11 mm) | Same part, full height. Wider tie channel and thicker ears — use it only once you know the locking collar band is at least 11 mm wide. |
+| `stl/01f_collar_lap.stl` | Collar, lapped | On ice, and worth revisiting in PAHT-CF. The recorder mount's actual mechanism: the band wraps 414° so its two ends lap past each other, each carrying a finger tab. **Squeeze** the tabs together and the lap shortens, which makes the circle bigger. 2.6 N — the lightest squeeze of any collar here. No hardware, no tools — [how it works](docs/ASSEMBLY.md#01f-is-the-one-to-print). **Goes on BEFORE the housing.** |
 | `stl/01e_collar_pinch.stl` | Collar, pinch | Reads closed at 340°, tabs flanking a gap — you **spread** these, not squeeze them. Lowest install strain in the set and no sliding clearance for a slicer to get wrong, so it is the fallback if `01f`'s lap fuses. **Goes on BEFORE the housing.** |
 | `stl/01_collar.stl` | Collar, screw clamp | Split band clamp, M3 pinch screw. The only one that can be fitted *after* the housing, and the only one with a preload you can re-tighten. |
 | `stl/01b_collar_proto.stl` | Collar, wide gap | Prototype only. Opens far enough to clamp anywhere across the plausible range, for use before the collar seat has been gauged. Needs an M3 × 30 screw. |
 | `stl/01c_collar_snap.stl` | Collar, push-on | Split C-ring, 230° wrap. Pushed straight on; the barrel cams it open. Superseded by `01e` — kept because it is the only spring ring that does not need an axial approach. |
 | `stl/01d_collar_lever.stl` | Collar, lever | Circlip-style, 290° wrap with finger paddles. Superseded by `01e`, which does the same job at 340° for less strain and less force. |
+| `stl/02b_killflash_housing_solid.stl` | Housing, no collet | Same housing with the collet slots deleted. Cleaner and stiffer, but a press roughly **1.7× tighter** — to fit *and* to remove. |
 | `stl/02_killflash_housing.stl` | Kill flash housing | Presses onto the objective bezel, carries the kill flash, gives the cap a register to close on. |
 | `stl/03_killflash_insert.stl` | Kill flash | Printed honeycomb. 71 % open area, 39° off-axis cutoff. |
 | `stl/04_flip_cap.stl` | Flip cap | Bungee-retained cover. Cord bosses at 3 and 9, thumb tab at 6, hex grip, centre mark. |
@@ -56,7 +59,7 @@ and softens around 55–60 °C; an afternoon on a dashboard will destroy it.
 
 ```bash
 python3 build.py        # writes one STL per part into stl/
-python3 tests.py        # 277 geometry and interface checks
+python3 tests.py        # 332 geometry and interface checks
 python3 render.py       # PNG previews into preview/
 ```
 

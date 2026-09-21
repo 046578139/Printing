@@ -3,8 +3,8 @@
 Per eye: 1 collar, 1 kill flash housing, 1 kill flash insert, 1 flip cap,
 and about 240 mm of 1/8 in (3.175 mm) shock cord. Double it for a binocular.
 
-The recommended collar is **`01f_collar_lap`**, which needs no hardware
-and no tools. If you print a screw collar instead, add 1 M3 socket head cap
+The recommended collar is **`01g_collar_cinch`** (short version), which
+needs one 3.6 mm zip tie and no tools. If you print a screw collar instead, add 1 M3 socket head cap
 screw and 1 M3 hex nut per eye: **16 mm** for `01_collar`, **30 mm** for
 `01b_collar_proto` — the prototype's pinch gap is 13 mm wide, so the screw
 has to span a lot more air before it closes.
@@ -21,7 +21,17 @@ right** — print two of each and they fit either pod.
 > because they open all the way. Get this wrong and you are pulling a very
 > tight press fit back off a coated objective.
 
-**0. Spring collar onto the bare bezel.** *(`01c`–`01f` only —
+**0. Collar onto the LOCKING COLLAR — the fixed band immediately behind
+the focus ring, NOT the focus ring itself.** The bezel turns to focus and
+has play in it; more importantly the cap's register is circular, so the
+cap's orientation is held entirely by these two cords. On the fixed band,
+focusing just spins the housing under the cap and the thumb tab stays put.
+
+Slide the collar on from the front, over the bezel, then run a 3.6 mm zip
+tie round the channel and pull it tight. It must go on BEFORE the housing —
+it will not pass over the Ø43.65 flange afterwards.
+
+*(Spring collars `01c`–`01f` instead —
 skip to step 1 for a screw collar and come back at step 3.)*
 
 Cord ears at 3 and 9 o'clock, ears facing **rearward**, lap or gap at 12.

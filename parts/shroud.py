@@ -36,7 +36,8 @@ Z_TOP   = Z_BODY + P.REG_HEIGHT                   # front face
 TOTAL   = Z_TOP
 
 
-def build():
+def build(slots: int = None):
+    slots = P.SHROUD_SLOTS if slots is None else slots
     ro   = P.SHROUD_OD / 2.0
     rreg = P.REG_OD / 2.0
 
@@ -56,7 +57,7 @@ def build():
         (rreg, Z_BODY),
         (rreg, Z_TOP),
         (0.0,  Z_TOP),
-    ] if P.SHROUD_SLOTS else [
+    ] if slots else [
         (0.0,  0.0),
         (ro,   0.0),
         (ro,   Z_BODY),
@@ -83,7 +84,7 @@ def build():
         bore_lead_in(0.0, P.SHROUD_BORE, P.SHROUD_LEAD_IN, False),
         # rear outside edge - kept small, it shares the rear face with the
         # bore lead-in above and that face is only COLLET_WALL wide
-        chamfer_outer(0.0, P.COLLET_OD if P.SHROUD_SLOTS else P.SHROUD_OD,
+        chamfer_outer(0.0, P.COLLET_OD if slots else P.SHROUD_OD,
                       P.SHROUD_REAR_CH, False),
         # NOTE: no chamfer on the front register. That face goes DOWN on the
         # plate, and chamfering it narrowed the first layer so the part
@@ -94,7 +95,7 @@ def build():
     part = part - union(cuts)
 
     # --- collet slots ------------------------------------------------------
-    if P.SHROUD_SLOTS:
+    if slots:
         span = P.SHROUD_OD + 8.0
         rb = P.SHROUD_BORE / 2.0
 
@@ -118,8 +119,8 @@ def build():
                   for sgn in (1.0, -1.0)]
 
         cutter = union([blade, keyhole] + breaks)
-        part = part - union([cutter.rotate([0, 0, 45.0 + 360.0 * i / P.SHROUD_SLOTS])
-                             for i in range(P.SHROUD_SLOTS)])
+        part = part - union([cutter.rotate([0, 0, 45.0 + 360.0 * i / slots])
+                             for i in range(slots)])
 
     # --- grip --------------------------------------------------------------
     part = part - axial_flutes(P.KNURL_START, P.KNURL_LEN, P.SHROUD_OD,
@@ -132,4 +133,16 @@ META = dict(
     desc="Shroud: presses onto the objective bezel, holds the kill flash, "
          "gives the cap a register to close on.",
     orient="Front face down - ALREADY ORIENTED. No supports.",
+)
+
+
+META_SOLID = dict(
+    name="02b_killflash_housing_solid",
+    desc="ALTERNATIVE: the same housing with the collet slots deleted and the "
+         "OD relief filled in. Cleaner, stiffer - and a press fit roughly "
+         "1.7x tighter than 02, because the collet was carrying about a "
+         "tenth of the grip on a third of the length. Try it before you "
+         "commit; it is also 1.7x harder to get back OFF.",
+    orient="Front face down - ALREADY ORIENTED. No supports.",
+    hardware="None.",
 )

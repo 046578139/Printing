@@ -97,6 +97,20 @@ SETS = {
         name=lambda v, i: "cinch_%05.2f" % v,
         build=lambda v, i: cinchcollar.build(bore=v, label="%.1f" % v),
     ),
+    # Same three bores, short. The locking collar is a narrow band and its
+    # width has never been measured; if it is under 11 mm the standard collar
+    # rides up onto the focus ring, which is the exact binding the seat was
+    # moved to avoid. Print whichever height matches the band.
+    "cinch-short": dict(
+        what="01g cinch collar, 9.00 tall - for a narrow locking collar",
+        how="Same three bores. Use these if the locking collar band is under "
+            "11 mm wide. Channel still takes a 3.6 mm tie; the ears give up "
+            "the height instead.",
+        values=[37.2, 39.2, 41.2],
+        name=lambda v, i: "cinchS_%05.2f" % v,
+        build=lambda v, i: cinchcollar.build(bore=v, label="%.1f" % v,
+                                             height=P.CINCH_SHORT_Z),
+    ),
     "lap-bore": dict(
         what="01f lapped collar free bore",
         how="SQUEEZE the two tabs together - they are at different heights "
