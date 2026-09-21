@@ -8,13 +8,16 @@ retained with 1/8 in shock cord.
 
 > ## Read this first
 >
-> The two hardware diameters in `params.py` are **nominal PVS-14 figures,
-> not measurements of your hardware**. One of the four parts is an
-> interference fit on an objective assembly worth more than the printer.
+> **Front bezel: bracketed at 36.75** — the coarse gauge showed modelled
+> bore 36.65 would not go on and 37.15 went on loose. That is 1.3 mm under
+> the AN/PVS-14 nominal this project started from. Confirm it with the
+> 0.10 mm fine ladder before printing a set.
 >
-> Print the two fit gauges, find the rings that fit, set two numbers,
-> rebuild. It costs about 40 minutes and it is the difference between a
-> working set and a pile of scrap. → **[docs/MEASUREMENTS.md](docs/MEASUREMENTS.md)**
+> **Collar barrel: still unverified**, and now suspect for the same reason.
+> The coarse ladder may not have bracketed it. Do not print a collar until
+> that number is read off a gauge.
+>
+> → **[docs/MEASUREMENTS.md](docs/MEASUREMENTS.md)**
 
 ## The parts
 

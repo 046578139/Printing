@@ -9,6 +9,7 @@ the kind of thing you only notice after a two-hour print.
     python3 build.py cap collar           # build a subset
     python3 build.py gauge --step 0.1     # fine sweep once you are close
     python3 build.py gauge --nominal 39.2 --step 0.1 --count 7
+    python3 build.py gauge:shroud --step 0.1 --count 7   # one ladder only
 """
 
 import os
@@ -106,11 +107,16 @@ def main(argv):
         fn, g, meta = PARTS[name]
         rows.append(build_one(name, fn(), g, meta, FILENAME[name]))
 
-    if "gauge" in want:
-        for tag, nom, fit, fname in (
-            ("shroud bore", P.OBJ_FRONT_OD, P.FIT_PRESS, "05_gauge_shroud"),
-            ("collar bore", P.OBJ_COLLAR_OD, P.FIT_SLIP, "06_gauge_collar"),
-        ):
+    GAUGES = (
+        ("shroud", "shroud bore", P.OBJ_FRONT_OD, P.FIT_PRESS, "05_gauge_shroud"),
+        ("collar", "collar bore", P.OBJ_COLLAR_OD, P.FIT_SLIP, "06_gauge_collar"),
+    )
+    for key, tag, nom, fit, fname in GAUGES:
+        if "gauge" not in want and ("gauge:" + key) not in want:
+            continue
+        if "gauge:" in " ".join(want) and ("gauge:" + key) not in want:
+            continue
+        if True:
             nom = opts.get("nominal", nom)
             m = dict(gauge.META)
             m["desc"] = "Ring ladder centred on the %s (%.2f nominal)." % (tag, nom + fit)

@@ -5,13 +5,22 @@ in `params.py` is derived from them.
 
 | Parameter | What it is | Current value |
 |---|---|---|
-| `OBJ_FRONT_OD` | OD of the **fixed front bezel** the kill flash housing presses onto | **38.00 — NOT MEASURED** |
-| `OBJ_COLLAR_OD` | OD of the **non-rotating barrel section** the collar clamps | **41.00 — NOT MEASURED** |
+| `OBJ_FRONT_OD` | OD of the **fixed front bezel** the kill flash housing presses onto | **36.75 — bracketed, needs the fine pass** |
+| `OBJ_COLLAR_OD` | OD of the **non-rotating barrel section** the collar clamps | **41.00 — STILL UNVERIFIED, and now suspect** |
 
-Those two values are nominal AN/PVS-14-pattern figures. They are a starting
-point, not a measurement of your hardware. Nocturn Raptor housings take
-PVS-14-pattern objectives, so they should be close — but "close" on a press
-fit means the part either splits or slides off.
+### Where these stand
+
+The coarse gauge bracketed the front bezel: modelled bore **36.65 would not
+go on**, **37.15 went on loose**. So the press fit is between them and near
+the bottom of that range — provisional centre 36.90, i.e.
+`OBJ_FRONT_OD = 36.90 − FIT_PRESS = 36.75`.
+
+That is **1.3 mm under** the AN/PVS-14 nominal this project started from,
+which is a useful thing to know and a warning: `OBJ_COLLAR_OD` is still
+sitting on its unverified 41.00 and is very likely wrong by a similar
+amount. The coarse collar ladder started at 39.40 and may not have
+bracketed it at all. **Do not print a collar until that number is read off
+a gauge.**
 
 ## Step 1 — measure
 

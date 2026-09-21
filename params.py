@@ -25,9 +25,16 @@ All units are millimetres, all angles degrees.
 # !! HARDWARE. Confirm them with the printed gauges before committing to a
 # !! full set. See docs/MEASUREMENTS.md.
 
-OBJ_FRONT_OD    = 38.00   # [VERIFY] OD of the fixed front bezel the shroud grips
+OBJ_FRONT_OD    = 36.75   # [BRACKETED] from the coarse gauge: modelled bore 36.65
+                          # would not go on, 37.15 went on loose. Provisional
+                          # centre 36.90 => 36.90 - FIT_PRESS. Confirm with the
+                          # 0.10 mm fine ladder before printing a full set.
 OBJ_FRONT_LEN   = 10.00   # [VERIFY] usable straight length of that bezel
-OBJ_COLLAR_OD   = 41.00   # [VERIFY] OD of the non-rotating body the collar clamps
+OBJ_COLLAR_OD   = 41.00   # [STILL UNVERIFIED - and now suspect. The front bezel
+                          # came in 1.3 mm under its PVS-14 nominal, so this one
+                          # probably is too. The coarse collar ladder may not even
+                          # have bracketed it. Do not print a collar until this is
+                          # read off a gauge.]
 OBJ_COLLAR_LEN  = 12.00   # [VERIFY] usable straight length there
 
 # Global bore trim. Nudge this one number instead of editing each part:
@@ -137,7 +144,7 @@ REG_CHAMFER     = 0.60
 # The bungee runs straight forward from the collar ear to the cap boss, well
 # outboard of the shroud, so both cord holes sit on ONE radius. Change this
 # and both parts follow.
-CORD_RADIUS     = 26.00
+CORD_RADIUS     = SHROUD_OD / 2 + 4.20
 CORD_EDGE_WALL  = 2.55   # material left outboard of the cord hole
 
 # Knurl band for grip with gloves.
