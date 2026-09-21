@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import params as P
 from lib.solids import box
-from parts import collar, shroud, killflash, cap
+from parts import collar, snapcollar, shroud, killflash, cap
 
 FAILS = []
 CHECKS = [0]
@@ -201,6 +201,54 @@ def test_collar_proto():
     probe(m, "proto bore clear", (0.0, P.COL_PROTO_BORE / 2 - 1.5, 5.5), False)
 
 
+def test_collar_snap():
+    m = snapcollar.build()
+    topology(m, "collar_snap", expect_genus=2)
+
+    check(P.SNAP_WRAP > 180.0,
+          "snap collar wraps %.0f deg - under 180 it cannot capture the "
+          "barrel at all" % P.SNAP_WRAP)
+    check(P.SNAP_WRAP < 250.0,
+          "snap collar wraps %.0f deg - past ~240 the spread needed to get "
+          "over the barrel grows very fast" % P.SNAP_WRAP)
+    check(P.SNAP_LEADIN_D < P.COL_WALL * 0.6,
+          "cam ramp %.2f eats too much of a %.2f wall"
+          % (P.SNAP_LEADIN_D, P.COL_WALL))
+
+    # Installation strain must have real margin in the weakest material the
+    # part will ever be printed in, at the LARGEST barrel it might see.
+    worst = P.SNAP_BORE + P.SNAP_INTERF + 1.2
+    r = snapcollar.mechanics(barrel=worst, interference=worst - P.SNAP_BORE)
+    check(r["install"] < 0.015,
+          "install strain %.2f%% at a %.2f barrel exceeds PLA's ~1.5%% limit"
+          % (r["install"] * 100, worst))
+    check(r["install"] < 0.015 / 1.5,
+          "install strain %.2f%% leaves under 1.5x margin in PLA"
+          % (r["install"] * 100))
+
+    # And it has to actually grip at the SMALLEST barrel, or it is jewellery.
+    best = P.SNAP_BORE + 0.2
+    rb = snapcollar.mechanics(barrel=best, interference=0.2)
+    check(rb["seated"] > 0.0002,
+          "seated strain %.3f%% at a %.2f barrel is too low to grip"
+          % (rb["seated"] * 100, best))
+
+    # Seated strain is sustained, and sustained strain creeps.
+    nom = snapcollar.mechanics()
+    check(nom["seated"] < 0.010,
+          "seated strain %.2f%% is high for a permanently loaded part - it "
+          "will relax" % (nom["seated"] * 100))
+    check(nom["spread"] > 0.5,
+          "spread of %.2f mm means the ring barely has to flex - check the "
+          "wrap angle" % nom["spread"])
+
+    probe(m, "snap ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "snap ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "snap gap open at 6", (0.0, -(P.SNAP_BORE / 2 + 1.5), 5.5), False)
+    probe(m, "snap crown solid at 12",
+          (0.0, P.SNAP_BORE / 2 + 1.5, 5.5), True)
+
+
 def test_shroud():
     m = shroud.build()
     topology(m, "shroud", expect_genus=1)
@@ -298,8 +346,8 @@ def test_cap():
 
 
 def main():
-    for fn in (test_interfaces, test_collar, test_collar_proto, test_shroud,
-               test_killflash, test_cap):
+    for fn in (test_interfaces, test_collar, test_collar_proto,
+               test_collar_snap, test_shroud, test_killflash, test_cap):
         name = fn.__name__.replace("test_", "")
         before = len(FAILS)
         fn()

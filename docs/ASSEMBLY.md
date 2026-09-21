@@ -65,6 +65,62 @@ Cut four pieces about 120 mm each. Per side, per eye:
 Repeat on the other side. Both cords should end up the same length or the
 cap will sit crooked.
 
+## Which collar: screw or snap
+
+Two mechanisms are provided. They are drop-in swaps — same cord ears, same
+radius, same install direction — so you can fit one of each and decide on
+your own hardware.
+
+| | `01_collar` / `01b` screw clamp | `01c` snap C-ring |
+|---|---|---|
+| Hardware | M3 screw + hex nut per eye | none |
+| Tools | hex key | none |
+| Preload | **adjustable, re-tightenable** | fixed by geometry |
+| Grip across a diameter range | narrow (0.83 mm stock, 4.14 mm on `01b`) | wide and self-adjusting |
+| Rotational security | high, positive | friction only |
+| Parts to lose | 2 | 0 |
+| Ages by | loosening you can fix | creeping you cannot |
+
+### The snap ring's numbers
+
+Wrap is 230°, so it captures well past the equator. The barrel has to pass
+the **chord between the tips**, which is what sets how far the ring flexes:
+
+| Barrel | Interference | Tip spread | Install strain | Seated strain | Margin PLA / PAHT-CF |
+|---|---|---|---|---|---|
+| 39.2 | 0.20 | 3.85 | 0.51 % | 0.042 % | 2.9x / 4.9x |
+| 40.0 | 1.00 | 4.65 | 0.61 % | 0.205 % | 2.4x / 4.1x |
+| 41.0 | 2.00 | 5.65 | 0.75 % | 0.400 % | 2.0x / 3.3x |
+| 42.0 | 3.00 | 6.65 | 0.88 % | 0.586 % | 1.7x / 2.8x |
+| 42.2 | 3.20 | 6.85 | 0.90 % | 0.622 % | 1.7x / 2.8x |
+
+*Install* is transient, while the ring passes over the barrel. *Seated* is
+sustained — it is what grips, and it is what creeps.
+
+Two things fall out of that table:
+
+- **Installation is safe everywhere**, with 1.7–2.9× margin in PLA and
+  2.8–4.9× in PAHT-CF. The band bends *within* its layers when printed rear
+  face down, so this loads X-Y strength and never tests layer adhesion.
+- **Grip varies by 15×** across the range, from 0.04 % seated strain on a
+  small barrel to 0.62 % on a large one. That is the honest weakness: the
+  ring does not know what it is gripping.
+
+### The real decider is creep
+
+A screw clamp holds by a preload you can restore with a hex key. A snap ring
+holds by a sustained elastic strain, and every polymer here stress-relaxes —
+it will be tightest on the day you fit it and there is nothing you can do
+about it afterwards.
+
+That makes the snap ring's viability a **material** question more than a
+geometry one. In PLA it is a prototype and nothing more. In PAHT-CF, with a
+~170 °C HDT, sustained 0.4 % strain is a much easier ask — which is the same
+property that put PAHT-CF on the collar in the first place.
+
+Fit one of each, leave them on the shelf for a month, and see which one you
+still trust. That is the test, and it is the reason both exist.
+
 ## Why the cap flips the way it does
 
 Both cord holes sit on the same radius (`CORD_RADIUS`, 26.00 mm), so the

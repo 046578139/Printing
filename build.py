@@ -23,7 +23,7 @@ import trimesh
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import params as P
-from parts import collar, shroud, killflash, cap, gauge
+from parts import collar, snapcollar, shroud, killflash, cap, gauge
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stl")
 
@@ -31,6 +31,7 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stl")
 PARTS = {
     "collar": (collar.build, 4, collar.META),
     "collar_proto": (collar.build_proto, 4, collar.META_PROTO),
+    "collar_snap": (snapcollar.build, 2, snapcollar.META),
     "shroud": (shroud.build, 1, shroud.META),
     "killflash": (killflash.build, None, killflash.META),
     "cap": (cap.build, 2, cap.META),
@@ -39,6 +40,7 @@ PARTS = {
 FILENAME = {
     "collar": "01_collar",
     "collar_proto": "01b_collar_proto",
+    "collar_snap": "01c_collar_snap",
     "shroud": "02_killflash_housing",
     "killflash": "03_killflash_insert",
     "cap": "04_flip_cap",

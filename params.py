@@ -216,6 +216,26 @@ M3_HEAD_DEPTH   = 3.40
 M3_NUT_AF       = 5.60    # DIN 934 M3 hex nut across flats + clearance
 M3_NUT_DEPTH    = 2.80
 
+# --------------------------------------------------------------------------
+# 01c  SNAP COLLAR  -- no-tools alternative
+# --------------------------------------------------------------------------
+# A split C-ring that flexes out of round over the barrel and springs back.
+# Wrap must be > 180 deg to capture; past about 240 the spread needed to get
+# it over the barrel grows fast, because the chord between the tips is what
+# the barrel has to pass through.
+SNAP_WRAP       = 230.00  # degrees of band
+SNAP_LEADIN     = 8.00    # extra gap degrees at the bore only: a cam ramp so
+                          # the barrel pushes the tips open instead of jamming
+SNAP_LEADIN_D   = 1.20    # radial depth of that ramp
+
+# Free bore sits this far under the barrel; the interference IS the grip.
+# 2.00 is a deliberately generous PROTOTYPE value: it makes one ring cover
+# the whole unverified barrel range (roughly 39.2 to 42.2) instead of only
+# the nominal. Drop it to about 0.8-1.0 once OBJ_COLLAR_OD is gauged, or the
+# ring will be needlessly hard to fit.
+SNAP_INTERF     = 2.00
+SNAP_BORE       = OBJ_COLLAR_OD - SNAP_INTERF + BORE_BIAS
+
 # Prototype-only wide-gap collar. The production gap of 2.60 mm is worth
 # only 0.83 mm of diameter range, which is fine once OBJ_COLLAR_OD is known
 # and useless before it. These numbers clamp anywhere from 42.20 down to

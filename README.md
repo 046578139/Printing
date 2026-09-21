@@ -26,6 +26,7 @@ retained with 1/8 in shock cord.
 |---|---|---|
 | `stl/01_collar.stl` | Retention collar | Split band clamp, M3 pinch screw. Anchors the shock cord and sets the cap's rotational orientation. **Needs the collar gauge first.** |
 | `stl/01b_collar_proto.stl` | Collar, wide gap | Prototype only. Clamps 42.20 → 38.06 instead of 41.40 → 40.57, so it grips whatever the barrel turns out to be. Needs an M3 × 30 screw. |
+| `stl/01c_collar_snap.stl` | Collar, no-tools | Split C-ring, 230° wrap. Flexes out of round over the barrel and springs back. No hardware at all. Drop-in swap for the screw version — [pros and cons](docs/ASSEMBLY.md#which-collar-screw-or-snap). |
 | `stl/02_killflash_housing.stl` | Kill flash housing | Presses onto the objective bezel, carries the kill flash, gives the cap a register to close on. |
 | `stl/03_killflash_insert.stl` | Kill flash | Printed honeycomb. 71 % open area, 39° off-axis cutoff. |
 | `stl/04_flip_cap.stl` | Flip cap | Bungee-retained cover. Cord bosses at 3 and 9, thumb tab at 6, hex grip, centre mark. |
