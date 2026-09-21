@@ -20,7 +20,7 @@ no support anywhere.
 
 import params as P
 from lib.solids import (profile_revolve, cyl, chamfer_outer, bore_lead_in,
-                        union)
+                        union, rect2d, fillet2d, circle2d)
 from lib.patterns import axial_flutes
 
 Z_KF    = P.SHROUD_GRIP_LEN                       # kill flash seat face
@@ -71,6 +71,20 @@ def build():
         bore_lead_in(Z_FLNG, P.SHROUD_APERTURE, 0.5, False),
     ]
     part = part - union(cuts)
+
+    # --- collet slots ------------------------------------------------------
+    # Cut from the rear face forward, through the full wall, with a rounded
+    # end so there is no square corner for a crack to start from.
+    if P.SHROUD_SLOTS:
+        slot2d = fillet2d(rect2d(P.SHROUD_OD + 6.0, P.SLOT_W), P.SLOT_END_R)
+        blade = slot2d.extrude(P.SLOT_LEN + P.SLOT_END_R)
+        # Keep only the outboard half so the slot does not cut clean across.
+        half = rect2d(P.SHROUD_OD + 8.0, P.SLOT_W + 2.0) \
+            .translate(((P.SHROUD_OD + 8.0) / 2.0, 0.0))
+        blade = blade ^ half.extrude(P.SLOT_LEN + P.SLOT_END_R)
+        blade = blade.translate([0, 0, -P.SLOT_END_R])
+        part = part - union([blade.rotate([0, 0, 45.0 + 360.0 * i / P.SHROUD_SLOTS])
+                             for i in range(P.SHROUD_SLOTS)])
 
     # --- grip --------------------------------------------------------------
     part = part - axial_flutes(P.KNURL_START, P.KNURL_LEN, P.SHROUD_OD,

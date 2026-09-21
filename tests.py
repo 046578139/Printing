@@ -161,6 +161,26 @@ def test_shroud():
     check(shroud.Z_KF >= P.SHROUD_GRIP_LEN,
           "kill flash pocket overlaps the objective bezel")
 
+    if P.SHROUD_SLOTS:
+        check(P.SLOT_LEN < P.SHROUD_GRIP_LEN,
+              "collet slots (%.1f) run past the grip section (%.1f) and would "
+              "open the kill flash seat" % (P.SLOT_LEN, P.SHROUD_GRIP_LEN))
+        import math as _m
+        r_mid = (P.SHROUD_BORE / 2 + P.SHROUD_OD / 2) / 2
+        for i in range(P.SHROUD_SLOTS):
+            a = _m.radians(45.0 + 360.0 * i / P.SHROUD_SLOTS)
+            probe(m, "shroud slot %d open" % i,
+                  (r_mid * _m.cos(a), r_mid * _m.sin(a), P.SLOT_LEN / 2), False)
+            probe(m, "shroud seat solid above slot %d" % i,
+                  (r_mid * _m.cos(a), r_mid * _m.sin(a), shroud.Z_KF + 2.5), True)
+        # Between slots there must still be real wall.
+        a = _m.radians(45.0 + 180.0 / P.SHROUD_SLOTS)
+        probe(m, "shroud wall between slots",
+              (r_mid * _m.cos(a), r_mid * _m.sin(a), P.SLOT_LEN / 2), True)
+        removed = P.SHROUD_SLOTS * P.SLOT_W / (_m.pi * P.SHROUD_OD)
+        check(removed < 0.20,
+              "collet slots remove %.0f%% of the grip circumference" % (removed * 100))
+
 
 def test_killflash():
     m = killflash.build()

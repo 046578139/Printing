@@ -74,6 +74,19 @@ SHROUD_OD       = SHROUD_BORE + 2 * SHROUD_WALL      # ~44.9
 SHROUD_GRIP_LEN = 8.00    # how far it swallows the objective bezel
 SHROUD_LEAD_IN  = 1.20    # rear chamfer so it starts onto the lens squarely
 
+# Collet slots through the grip section. A solid 3.4 mm ring pressed at
+# +0.15 onto an objective barrel has a narrow acceptance window and dumps
+# real hoop stress into an expensive optic: 0.1 mm too big and it splits or
+# scores the barrel, 0.1 mm too small and it falls off. Four axial slots
+# turn the grip into a four-finger collet, which spreads the same grip over
+# a much wider diameter band at a fraction of the peak stress.
+# Set SHROUD_SLOTS = 0 for a solid ring if you would rather have the
+# stiffness and can hit the diameter exactly.
+SHROUD_SLOTS    = 4
+SLOT_W          = 1.60
+SLOT_LEN        = 6.40    # < SHROUD_GRIP_LEN, so the kill flash seat stays a full ring
+SLOT_END_R      = 0.80    # rounded slot end: a square corner is a crack starter
+
 # Front retaining flange: the kill flash loads from the REAR and seats here,
 # then the objective traps it. No snap ring, no glue, fully serviceable.
 SHROUD_APERTURE = 33.00   # clear aperture; PVS-14 glass is ~26 mm, no vignette

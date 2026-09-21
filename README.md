@@ -77,6 +77,13 @@ front-face-down so the decorated face gets the plate finish and the grip
 texture is debossed rather than raised; the collar's nut trap is rotated
 point-up so it bridges itself.
 
+**The housing grip is a four-finger collet, not a solid ring.** A solid
+3.4 mm wall pressed at +0.15 onto an objective barrel has a narrow
+acceptance window and puts real hoop stress into an expensive optic. Four
+axial slots spread the same grip across a much wider diameter band at a
+fraction of the peak stress, and give the print somewhere to go instead of
+splitting. Set `SHROUD_SLOTS = 0` if you would rather have the stiffness.
+
 **The cap seats on the housing shoulder, not the register.** The pocket is
 0.4 mm deeper than the register is tall, so the register locates and the
 shoulder takes the load. A cap that lands on the register rocks.
