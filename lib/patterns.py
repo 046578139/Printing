@@ -3,7 +3,7 @@
 import math
 import numpy as np
 import manifold3d as m3d
-from manifold3d import Manifold, CrossSection, JoinType
+from manifold3d import Manifold, CrossSection, JoinType, FillRule
 
 from .solids import (poly, circle2d, rect2d, hexagon2d, fillet2d, round2d,
                      cyl, box, union, extrude, SEG)
@@ -77,8 +77,16 @@ def grip_panel(width: float, height: float, depth: float, cell: float,
     """A rounded-rect patch of hex texture, sitting on Z=0, `depth` tall.
 
     Returns the WALL LATTICE. Subtract it from a face and the hex cells are
-    left standing proud of the grooves - which is the way round that prints
-    cleanly when the decorated face goes down on the plate.
+    left standing proud of the grooves.
+
+    THIS IS THE WAY ROUND THAT PRINTS BADLY, and the printed cap proved it.
+    Front face down, every raised cell is an isolated island on the first
+    layer - a 2.6 mm blob with nothing to anchor to - and the groove floor
+    between them is a ceiling bridged over air. The result is squashed cells
+    and ropey bridge lines across the panel floor.
+
+    Use grip_dimples() instead. This is kept only for the record and for
+    anyone printing the cap face UP.
     """
     cr = cell / math.sqrt(3.0)
     hx, hy = width / 2.0 - wall, height / 2.0 - wall
@@ -95,6 +103,37 @@ def grip_panel(width: float, height: float, depth: float, cell: float,
     outline = fillet2d(rect2d(width, height), corner_r)
     centres = hex_centres(cell, wall, max(width, height), inside)
     return (outline - _hex_union(centres, cell)).extrude(depth)
+
+
+def grip_dimples(width: float, height: float, depth: float, cell: float,
+                 wall: float, corner_r: float = 1.4) -> Manifold:
+    """The same hex field, the other way round: the CELLS, not the walls.
+
+    Subtract it from a face and you get hex dimples in an otherwise flat
+    surface. Printed front-face-down that is strictly better in both of the
+    ways grip_panel is worse:
+
+      * nothing is an island. The face is continuous across the whole first
+        layer, so there are no isolated 2.6 mm blobs to squash.
+      * every bridge is one cell wide. A 2.6 mm span closes cleanly; the
+        recessed panel's floor was one continuous ceiling most of 21 mm
+        across, which is where the ropey lines came from.
+
+    Grip is unchanged - a fingertip reads a dimple and a pip the same way.
+    """
+    cr = cell / math.sqrt(3.0)
+    hx, hy = width / 2.0 - wall, height / 2.0 - wall
+
+    def inside(x, y):
+        if abs(x) + cr > hx or abs(y) + cr > hy:
+            return False
+        ox, oy = abs(x) - (hx - corner_r), abs(y) - (hy - corner_r)
+        if ox > 0 and oy > 0:
+            return math.hypot(ox, oy) + cr <= corner_r
+        return True
+
+    centres = hex_centres(cell, wall, max(width, height), inside)
+    return _hex_union(centres, cell).extrude(depth)
 
 
 def chevron_mark(width: float, depth: float) -> Manifold:
@@ -148,3 +187,33 @@ def pinch_tab_2d(r_out: float, proj: float, w: float, head_d: float,
     stem = rect2d(proj + 3.0, w).translate((r_out + proj / 2.0 - 1.5, 0.0))
     head = circle2d(head_d).translate((r_out + proj, 0.0))
     return round2d(stem + head, round_r)
+
+
+def traced_mark(depth: float, height: float = None, smooth: float = 0.12):
+    """The cap's centre mark, from the traced artwork in lib/mark_data.py.
+
+    The data is a set of horizontal run rectangles rather than outlines, fed
+    to ONE CrossSection with a positive fill rule so they union for free.
+    Chaining a few thousand booleans instead would be slow and is the kind of
+    thing that quietly returns a fragmented result.
+
+    `smooth` then rounds the run staircase away. The steps are already finer
+    than the nozzle - a run is one source pixel tall, about 0.015 mm - so
+    this is purely to keep the vertex count sane; it is not doing anything
+    the printer could otherwise see.
+    """
+    from lib import mark_data
+    scale = 1.0 if height is None else height / mark_data.MARK_HEIGHT
+    quads = [np.array([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dtype=float) * scale
+             for x0, y0, x1, y1 in mark_data.RUNS]
+    cs = CrossSection(quads, FillRule.Positive)
+    if smooth > 0:
+        cs = round2d(cs, smooth)
+    return cs.extrude(depth)
+
+
+def traced_mark_size(height: float = None) -> tuple:
+    """(width, height) the traced mark will occupy, in mm."""
+    from lib import mark_data
+    scale = 1.0 if height is None else height / mark_data.MARK_HEIGHT
+    return mark_data.MARK_WIDTH * scale, mark_data.MARK_HEIGHT * scale

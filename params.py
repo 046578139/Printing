@@ -566,13 +566,22 @@ TAB_T           = 4.60
 TAB_UNDERCUT    = 1.80
 
 # Grip texture panels at 12 and 6 o'clock.
+# True: hex DIMPLES cut into a flat face. False: a recessed panel with the
+# cells left standing proud. Dimples, because the face prints downward - a
+# raised cell is an isolated first-layer island and the floor around it is a
+# long bridge, which is exactly what the first printed cap showed.
+TEX_DIMPLE      = True
 TEX_CELL        = 2.60
 TEX_DEPTH       = DETAIL_DEPTH
 TEX_WALL        = round(NOZZLE * 1.6, 2)
 
 # Centre mark. Generic chevron/mountain deboss - swap or disable freely.
 MARK_ENABLE     = True
-MARK_W          = 18.00
+MARK_TRACED     = True    # use the traced artwork in lib/mark_data.py
+MARK_H          = 18.00   # sized by HEIGHT - the glyph is tall and narrow,
+                          # and what constrains it is the 19 mm clear band
+                          # between the two grip panels, not the cap width
+MARK_W          = 18.00   # only used by the fallback chevron
 MARK_DEPTH      = DETAIL_DEPTH
 
 

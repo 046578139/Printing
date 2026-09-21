@@ -883,6 +883,68 @@ def test_cap():
     probe(m, "cap thumb scoop",      (0.0, cap.TAB_Y_OUT + 2.5, 0.3), False)
 
 
+def test_mark():
+    """The traced centre mark, and the one thing that decides whether it
+    prints at all: a debossed groove narrower than the nozzle is not a fine
+    groove, it is no groove. 18 % of the supplied artwork's area sat in
+    strokes that fine, which is why the tracer opens the mask first."""
+    import math as _m
+    from lib import mark_data
+    from lib.patterns import traced_mark, traced_mark_size
+    import parts.cap as capmod
+
+    check(mark_data.MIN_STROKE >= P.LINE_WIDTH,
+          "the mark was traced at a %.2f mm minimum stroke, under the %.2f mm "
+          "line width - the thin strokes will not appear"
+          % (mark_data.MIN_STROKE, P.LINE_WIDTH))
+    check(mark_data.MIN_STROKE >= P.NOZZLE * 1.1,
+          "%.2f mm minimum stroke is only %.1fx a %.2f nozzle"
+          % (mark_data.MIN_STROKE, mark_data.MIN_STROKE / P.NOZZLE, P.NOZZLE))
+
+    w, h = traced_mark_size(P.MARK_H)
+    check(abs(h - P.MARK_H) < 1e-6, "mark height is %.2f, not %.2f" % (h, P.MARK_H))
+
+    # It has to fit the clear band between the two grip panels, which is what
+    # actually constrains it - the glyph is tall and narrow, so the cap's
+    # width is never the limit.
+    band = 2.0 * (capmod.PANEL_Y - capmod.PANEL_H / 2.0)
+    check(h < band,
+          "mark is %.2f mm tall but the clear band between the grip panels is "
+          "only %.2f mm - they overlap" % (h, band))
+    check(band - h >= 0.5,
+          "only %.2f mm between the mark and the grip panels" % (band - h))
+
+    # The built mark comes out up to one smoothing radius under its declared
+    # size, because round2d blunts the glyph's pointed tips. That is the
+    # intended behaviour - those tips are below the nozzle anyway - but it
+    # must not be doing more than that.
+    SMOOTH = 0.12
+    m = traced_mark(P.MARK_DEPTH + 0.2, P.MARK_H)
+    bb = m.bounding_box()
+    dw, dh = w - (bb[3] - bb[0]), h - (bb[4] - bb[1])
+    # A hair of overshoot is offset arithmetic, not a defect; what this
+    # is looking for is the mark coming out materially undersized.
+    check(-0.01 <= dh <= SMOOTH and -0.01 <= dw <= SMOOTH,
+          "the built mark is %.3f x %.3f short of its declared %.2f x %.2f - "
+          "more than the %.2f smoothing radius can explain" % (dw, dh, w, h, SMOOTH))
+    check(m.volume() > 0, "the mark has no volume")
+    check(P.MARK_DEPTH < P.CAP_FACE_T * 0.5,
+          "the mark is too deep for the cap face")
+
+    # Debossed and printed face down, every stroke is a bridged ceiling. A
+    # glyph gets away with that because its spans are stroke-width; the
+    # chevron it replaced was one 18 mm span, which is where the ropey lines
+    # in the first printed cap came from.
+    check(w < 12.0,
+          "the mark is %.2f mm across - wide enough that its floor is a long "
+          "bridge rather than a set of short ones" % w)
+
+    # Dimples, not pips: nothing on the decorated face may be an island.
+    check(P.TEX_DIMPLE,
+          "TEX_DIMPLE is off - raised hex cells are isolated first-layer "
+          "islands when the face prints downward")
+
+
 def test_assembly():
     """Virtual assembly. Parts that pass every dimension check individually
     can still refuse to go together - which is exactly what happened to the
@@ -964,7 +1026,7 @@ def main():
     for fn in (test_interfaces, test_collar, test_collar_proto,
                test_collar_snap, test_collar_lever, test_collar_pinch,
                test_collar_lap, test_collar_cinch, test_shroud,
-               test_killflash, test_cap, test_assembly,
+               test_killflash, test_cap, test_mark, test_assembly,
                test_export_orientation):
         name = fn.__name__.replace("test_", "")
         before = len(FAILS)
