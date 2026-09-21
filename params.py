@@ -88,10 +88,30 @@ CAL_LAYER       = 0.20
 
 
 def calibration_is_stale() -> bool:
-    """True when the fit numbers were taken on a different setup."""
+    """True when the fit numbers were taken on a setup that would deliver a
+    different BORE.
+
+    Nozzle and material only. Every fit in this set is a vertical bore, and a
+    vertical bore's delivered diameter is set by the extrusion width and how
+    the slicer plans the perimeter around a curve - both functions of the
+    nozzle. Layer height changes how many of those perimeters are stacked,
+    not where any of them goes.
+
+    That is not the same as "layer height does not matter": see
+    calibration_note(). It just is not worth throwing away a hard-won
+    measurement over, and crying wolf is how a staleness flag gets ignored.
+    """
     return (abs(CAL_NOZZLE - NOZZLE) > 1e-9
-            or abs(CAL_LAYER - LAYER) > 1e-9
             or CAL_MATERIAL != PRINT_MATERIAL)
+
+
+def calibration_note() -> str:
+    """Second-order caveats on an otherwise valid calibration."""
+    if abs(CAL_LAYER - LAYER) < 1e-9:
+        return ""
+    return ("gauged at %.2f layers, printing at %.2f - second order for a "
+            "vertical bore, but re-check the press if it feels different"
+            % (CAL_LAYER, LAYER))
 
 # How much must be ADDED to a modelled bore to land the same DELIVERED bore
 # as PLA Basic. More shrinkage -> smaller delivered bore -> positive number.
@@ -169,7 +189,7 @@ LINER_T         = 0.00
 # supported way to move between machines - editing feature sizes by hand is
 # not.
 NOZZLE          = 0.40
-LAYER           = 0.20
+LAYER           = 0.12
 
 # What actually limits a thin feature is the EXTRUSION WIDTH, not the nozzle
 # bore. Bambu defaults a 0.40 nozzle to 0.42 and a 0.60 to about 0.62, so
@@ -185,7 +205,15 @@ THIN_WALL       = round(LINE_WIDTH * 1.20, 2)  # reliable single pass
 WALL_MIN        = round(NOZZLE * 3, 2)      # 3 perimeters, load-bearing
 WALL_STD        = round(NOZZLE * 6, 2)      # 6 perimeters, structural
 # A deboss or emboss needs 3 layers to read cleanly, not 2.
-DETAIL_DEPTH    = round(LAYER * 3, 2)
+# How deep a debossed feature is cut. NOT derived from the layer height.
+#
+# It used to be LAYER * 3, which has the dependency backwards: finer layers
+# would give SHALLOWER detail, so dropping to 0.12 would have quietly taken
+# the hex dimples and the P from 0.60 deep to 0.36 and washed the cap out.
+# Depth is a design intent - how pronounced should it look - and the layer
+# height is a CONSTRAINT on it, not its source. The constraint is enforced in
+# tests.py: at least three layers, or the feature does not read.
+DETAIL_DEPTH    = 0.60
 FIRST_LAYER_SQUISH = 0.00 # set to ~0.05 if your first layer elephant-foots
 
 # THE PLATE-FACE RULE. Never chamfer the face that goes down on the plate.
@@ -631,7 +659,6 @@ def set_nozzle(nozzle: float, layer: float = None) -> None:
     g["THIN_WALL"] = round(g["LINE_WIDTH"] * 1.20, 2)
     g["WALL_MIN"] = round(nozzle * 3, 2)
     g["WALL_STD"] = round(nozzle * 6, 2)
-    g["DETAIL_DEPTH"] = round(g["LAYER"] * 3, 2)
     g["KF_WALL"] = g["THIN_WALL"]
     g["KF_RIM"] = round(nozzle * 2, 2)
     g["TEX_DEPTH"] = g["DETAIL_DEPTH"]
@@ -642,7 +669,7 @@ def set_nozzle(nozzle: float, layer: float = None) -> None:
 
 
 def summary() -> str:
-    return "\n".join([
+    return "\n".join([x for x in [
         "  objective front OD (verify) : %6.2f" % OBJ_FRONT_OD,
         "  objective collar OD (verify): %6.2f" % OBJ_COLLAR_OD,
         "  calibrated on / printing on : %s %.2f/%.2f  ->  %s %.2f/%.2f%s" % (
@@ -650,6 +677,12 @@ def summary() -> str:
             PRINT_MATERIAL, NOZZLE, LAYER,
             "   *** CALIBRATION STALE - RE-GAUGE ***"
             if calibration_is_stale() else ""),
+        "  detail depth / layers       : %6.2f / %.1f layers%s" % (
+            DETAIL_DEPTH, DETAIL_DEPTH / LAYER,
+            "   *** UNDER 3 LAYERS - IT WILL NOT READ ***"
+            if DETAIL_DEPTH < LAYER * 3 - 1e-9 else ""),
+        ("  note                        : %s" % calibration_note())
+        if calibration_note() else "",
         "  bore bias                   : %+6.2f%s" % (
             BORE_BIAS,
             "" if CAL_MATERIAL == PRINT_MATERIAL
@@ -662,4 +695,4 @@ def summary() -> str:
         "  cord line radius            : %6.2f  (collar ear == cap boss)" % CORD_RADIUS,
         "  collet finger wall / L-t    : %6.2f / %.2f" % (COLLET_WALL, SLOT_LEN / COLLET_WALL),
         "  bore liner allowance        : %6.2f" % LINER_T,
-    ])
+    ] if x])

@@ -130,12 +130,23 @@ def test_interfaces():
               "%s is %.2f mm, only %.1fx a %.2f nozzle - the slicer will "
               "drop it" % (name, v, v / P.NOZZLE, P.NOZZLE))
 
-    # Debossed detail needs real layers behind it, not one or two.
+    # Debossed detail needs real layers behind it, not one or two. This is the
+    # CONSTRAINT on DETAIL_DEPTH; the depth itself is a design choice and is
+    # deliberately not derived from the layer height, because that would make
+    # finer layers give shallower detail.
+    check(P.DETAIL_DEPTH >= P.LAYER * 3,
+          "DETAIL_DEPTH %.2f is only %.1f layers at %.2f - under three and a "
+          "deboss does not read" % (P.DETAIL_DEPTH, P.DETAIL_DEPTH / P.LAYER,
+                                    P.LAYER))
     for name, d in (("texture", P.TEX_DEPTH), ("centre mark", P.MARK_DEPTH),
                     ("gauge text", P.GAUGE_TEXT_D)):
-        check(d >= P.LAYER * 2.5,
-              "%s is %.2f mm deep, under 3 layers at %.2f - it will not read"
-              % (name, d, P.LAYER))
+        check(d >= P.LAYER * 3,
+              "%s is %.2f mm deep, only %.1f layers at %.2f - it will not read"
+              % (name, d, d / P.LAYER, P.LAYER))
+    # And the calibration must still be valid for the hotend in use.
+    check(not P.calibration_is_stale(),
+          "calibration is stale: gauged on %s %.2f, printing %s %.2f"
+          % (P.CAL_MATERIAL, P.CAL_NOZZLE, P.PRINT_MATERIAL, P.NOZZLE))
     check(P.SHROUD_APERTURE > 28.0,
           "aperture %.2f is tight enough to vignette PVS-14 pattern glass"
           % P.SHROUD_APERTURE)
