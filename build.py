@@ -166,9 +166,18 @@ def main(argv):
             nom = opts.get("nominal", nom)
             m = dict(gauge.META)
             m["desc"] = "Ring ladder centred on the %s (%.2f nominal)." % (tag, nom + fit)
-            g = gauge.build(nom, fit,
-                            count=int(opts["count"]) if "count" in opts else None,
-                            step=opts.get("step"))
+            cnt = int(opts["count"]) if "count" in opts else P.GAUGE_COUNT
+            stp = opts.get("step") or P.GAUGE_STEP
+            g = gauge.build(nom, fit, count=cnt, step=stp)
+            # Print the RING LABELS, always. --nominal takes the objective
+            # diameter and the ladder adds `fit` to it, so passing a winning
+            # ring's label instead of the diameter silently shifts the whole
+            # ladder by one fit allowance - which is how a ladder went out
+            # centred a full step high and landed its winner on the bottom
+            # rung, where a winner tells you a bound and not a value.
+            mid = (cnt - 1) / 2.0
+            bores = [nom + fit + (i - mid) * stp for i in range(cnt)]
+            m["rings"] = "  ".join("%.2f" % b for b in bores)
             out = fname + ("_" + opts["tag"] if "tag" in opts else "")
             rows.append(build_one("gauge:" + tag, g, None, m, out))
 
@@ -198,6 +207,8 @@ def main(argv):
             print("      ERROR: %s" % e); bad += 1
         for e in r["warns"]:
             print("      warn:  %s" % e)
+        if r["meta"].get("rings"):
+            print("      rings: %s" % r["meta"]["rings"])
 
     print("\nwrote %d STL to %s  (%.1fs)" %
           (sum(1 for r in rows if r["status"] != "FAIL"), OUT, time.time() - t0))
