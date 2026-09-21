@@ -111,16 +111,20 @@ Note the number on the winning ring for each.
 Open `params.py` and set:
 
 ```python
-OBJ_FRONT_OD  = <fine gauge winner>   - FIT_PRESS   # subtract 0.15
-OBJ_COLLAR_OD = <collar gauge winner> - FIT_SLIP    # subtract 0.40
-BORE_BIAS     = 0.00                                # leave it there
+OBJ_FRONT_OD   = <fine gauge winner>   - FIT_PRESS   # subtract 0.15
+OBJ_COLLAR_OD  = <collar gauge winner> - FIT_SLIP    # subtract 0.40
+CAL_MATERIAL   = "PLA"        # whatever the gauge was printed in
+PRINT_MATERIAL = "PLA"        # whatever you are printing now
 ```
 
 The rings are labelled with their **modelled bore**, which already includes
 the design allowance, so you subtract it back out to recover the hardware
-number. Leave `BORE_BIAS` at zero — because the fine gauge was printed in
-the production material, the material offset is already baked into the
-winning ring. Then rebuild:
+number.
+
+`BORE_BIAS` is no longer a number you set — it is computed as the difference
+between `CAL_MATERIAL` and `PRINT_MATERIAL`. Set them equal and it is zero,
+which is the case that is actually *measured*. Set them differently and you
+get an estimate, flagged as such in the build summary. Then rebuild:
 
 ```
 python3 build.py && python3 tests.py
@@ -154,12 +158,28 @@ python3 build.py gauge --nominal 38.4 --step 0.1 --count 7
 
 ## If everything is uniformly tight or loose
 
-Do not edit the two hardware numbers — they are a record of your hardware.
-Use the single trim instead:
+Do not edit the two hardware numbers — they are a record of your hardware,
+not of your printer. Use the trim instead:
 
 ```python
-BORE_BIAS = +0.10   # everything 0.10 mm looser
-BORE_BIAS = -0.10   # everything 0.10 mm tighter
+BORE_TRIM = +0.10   # every hardware bore 0.10 mm looser
+BORE_TRIM = -0.10   # every hardware bore 0.10 mm tighter
 ```
 
-This is also the knob for moving between materials. See `docs/PRINTING.md`.
+## Changing material
+
+Change `PRINT_MATERIAL` and rebuild. The offset comes from a table in
+`params.py`:
+
+| Printing in | Bias applied, calibrated in PLA |
+|---|---|
+| PLA, PLA-CF | 0.00 |
+| PET-CF | 0.00 |
+| PETG | +0.05 |
+| ASA | +0.10 |
+| PAHT-CF, PPA-CF | +0.10 |
+
+**Only the PLA row is measured; the rest are estimates**, and the build
+summary says so whenever the two materials differ. A fine gauge printed in
+the production filament beats every one of them and costs 15 g and 20
+minutes. Do that before a final set. See [PRINTING.md](PRINTING.md).

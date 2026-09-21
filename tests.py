@@ -123,6 +123,27 @@ def test_interfaces():
         check(w >= 3 * P.NOZZLE * 0.95,
               "%s wall %.2f is under three perimeters" % (name, w))
 
+    # Material provenance must stay self-consistent: a calibration is only
+    # valid in the material it was read in.
+    check(P.CAL_MATERIAL in P.BORE_SHIFT,
+          "CAL_MATERIAL %r is not in BORE_SHIFT" % P.CAL_MATERIAL)
+    check(P.PRINT_MATERIAL in P.BORE_SHIFT,
+          "PRINT_MATERIAL %r is not in BORE_SHIFT" % P.PRINT_MATERIAL)
+    expect = (P.BORE_SHIFT[P.PRINT_MATERIAL] - P.BORE_SHIFT[P.CAL_MATERIAL]
+              + P.BORE_TRIM)
+    check(abs(P.BORE_BIAS - expect) < 1e-9,
+          "BORE_BIAS %.3f does not match the material table (%.3f)"
+          % (P.BORE_BIAS, expect))
+    check(abs(P.BORE_SHIFT["PLA"]) < 1e-9,
+          "PLA is the reference row and must be 0.00")
+    check(abs(P.BORE_BIAS) < 0.40,
+          "BORE_BIAS of %+.2f is larger than any real material delta - "
+          "check CAL_MATERIAL / PRINT_MATERIAL" % P.BORE_BIAS)
+
+    check(0.10 <= P.KF_FIT <= 0.45,
+          "KF_FIT %.2f is outside a workable press into the shroud bore"
+          % P.KF_FIT)
+
     check(P.GAUGE_STEP <= P.FIT_PRESS * 2,
           "gauge step %.2f cannot resolve a %.2f press fit"
           % (P.GAUGE_STEP, P.FIT_PRESS))

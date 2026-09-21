@@ -112,9 +112,10 @@ docs/               MEASUREMENTS, ASSEMBLY, PRINTING
 stl/                output
 ```
 
-`params.py` is the only file you should need to edit. `BORE_BIAS` is a
-single global trim for every hardware-facing bore — use it to move between
-materials or to correct a uniform fit error.
+`params.py` is the only file you should need to edit. Two hardware
+diameters, plus `CAL_MATERIAL` / `PRINT_MATERIAL` — the bore bias is derived
+from those, so changing filament is one line and cannot be got wrong by
+forgetting. `BORE_TRIM` is there for a uniform fit correction on top.
 
 ## Material
 

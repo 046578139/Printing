@@ -37,22 +37,49 @@ OBJ_COLLAR_OD   = 41.00   # [STILL UNVERIFIED - and now suspect. The front bezel
                           # read off a gauge.]
 OBJ_COLLAR_LEN  = 12.00   # [VERIFY] usable straight length there
 
-# Global bore trim. Nudge this one number instead of editing each part:
-#   too tight  -> +0.10
-#   too loose  -> -0.10
+# --------------------------------------------------------------------------
+# Bore calibration and material provenance
+# --------------------------------------------------------------------------
+# OBJ_FRONT_OD above was read off a gauge printed in ONE specific material.
+# That number is only valid in that material: a bore delivered by FDM is the
+# net of shrinkage, die swell and hole undersize, all of which are material
+# and process properties, not geometry.
 #
-# It does NOT have one value per "carbon filled". Chopped fibre SUPPRESSES
-# matrix shrinkage, so the direction depends on the matrix, not the filler:
+# So record what you calibrated in, and declare what you are printing now.
+# The bias is then just the difference between the two, and setting it
+# wrongly is no longer possible by forgetting.
+CAL_MATERIAL    = "PLA"      # material of the gauge that set OBJ_FRONT_OD
+PRINT_MATERIAL  = "PLA"      # material you are printing the parts in NOW
+
+# How much must be ADDED to a modelled bore to land the same DELIVERED bore
+# as PLA Basic. More shrinkage -> smaller delivered bore -> positive number.
 #
-#   PLA Basic  -> PAHT-CF (semi-crystalline)   +0.10   (range +0.05..+0.15)
-#   PLA Basic  -> PET-CF  (amorphous, CF)       0.00   (range  0.00..-0.05)
+# There is no single "carbon filled" value: chopped fibre SUPPRESSES matrix
+# shrinkage, so the direction follows the matrix. Amorphous PET-CF lands on
+# top of PLA; the semi-crystalline nylons do not.
 #
-# Applying a blanket +0.15 to PET-CF would open a 38.00 bezel fit to 0.30 mm
-# of clearance, which is the "falls off in the field" failure, not the tight
-# one. Better still: print the FINE gauge in the production filament and
-# leave this at zero - see docs/MEASUREMENTS.md. The offset then cancels
-# identically and you never need to know it.
-BORE_BIAS       = 0.00
+# Only the PLA row is measured. Everything else is an estimate, and a fine
+# gauge printed in the production filament beats every one of them - see
+# docs/MEASUREMENTS.md. Re-gauging costs 15 g and 20 minutes.
+BORE_SHIFT = {
+    "PLA":     0.00,   # reference
+    "PLA-CF":  0.00,
+    "PETG":   +0.05,   # estimate
+    "ASA":    +0.10,   # estimate
+    "PET-CF":  0.00,   # estimate; amorphous, CF-suppressed shrink
+    "PAHT-CF":+0.10,   # estimate; semi-crystalline
+    "PPA-CF": +0.10,   # estimate; semi-crystalline
+}
+
+for _m in (CAL_MATERIAL, PRINT_MATERIAL):
+    if _m not in BORE_SHIFT:
+        raise ValueError("unknown material %r - add it to BORE_SHIFT" % _m)
+
+# Extra manual trim on top, if a part still comes out tight or loose:
+#   too tight -> +0.10 ... too loose -> -0.10
+BORE_TRIM       = 0.00
+
+BORE_BIAS = BORE_SHIFT[PRINT_MATERIAL] - BORE_SHIFT[CAL_MATERIAL] + BORE_TRIM
 
 
 # ==========================================================================
@@ -158,7 +185,8 @@ KNURL_ANGLE     = 32.0
 # ==========================================================================
 # 03  KILL FLASH INSERT
 # ==========================================================================
-KF_OD           = SHROUD_BORE - 0.25       # light press into the shroud bore
+KF_FIT          = 0.25                     # light press of the insert into the bore
+KF_OD           = SHROUD_BORE - KF_FIT
 KF_THICK        = 5.00                     # depth of the honeycomb
 KF_CELL_AF      = 4.00                     # hex across-flats
 KF_WALL         = THIN_WALL
@@ -248,7 +276,11 @@ def summary() -> str:
     return "\n".join([
         "  objective front OD (verify) : %6.2f" % OBJ_FRONT_OD,
         "  objective collar OD (verify): %6.2f" % OBJ_COLLAR_OD,
-        "  bore bias                   : %+6.2f" % BORE_BIAS,
+        "  calibrated in / printing in : %s / %s" % (CAL_MATERIAL, PRINT_MATERIAL),
+        "  bore bias                   : %+6.2f%s" % (
+            BORE_BIAS,
+            "" if CAL_MATERIAL == PRINT_MATERIAL
+            else "  (estimated - re-gauge in %s)" % PRINT_MATERIAL),
         "  shroud bore / OD            : %6.2f / %.2f" % (SHROUD_BORE, SHROUD_OD),
         "  kill flash OD / thickness   : %6.2f / %.2f" % (KF_OD, KF_THICK),
         "  collar bore / OD            : %6.2f / %.2f" % (COL_BORE, COL_OD),
