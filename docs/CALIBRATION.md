@@ -18,10 +18,25 @@ you cannot re-buy expires silently.
 | 2026-09-21 | coarse | PLA, 0.60 nozzle | 36.15 → 40.15, 0.50 steps | 36.65 would not go on; 37.15 went on loose → bracketed |
 | 2026-09-21 | fine | PLA, 0.60 nozzle | 36.60 → 37.20, 0.10 steps | 36.90 — superseded, read on the wrong hotend |
 | 2026-09-21 | **re-gauge** | **PLA, 0.40 nozzle, 0.20 layer** | 36.45 → 37.05, 0.10 steps | **36.85 wins** — mid-ladder, not at an edge |
+| 2026-09-21 | **PETG, 0.40/0.12** | PETG | 36.65 → 37.05, 0.10 steps | **36.80 wins** — very tight but goes on; 36.90 slides off |
 | | production | PAHT-CF | 36.85 → 37.15, 0.05 steps | *pending — needs a 2–3 week soak before reading* |
 
-**In force:** `OBJ_FRONT_OD = 36.85 − FIT_PRESS = 36.70`, gauged in **PLA on
-a 0.40 nozzle at 0.20 layers**. `CAL_NOZZLE` / `CAL_LAYER` now agree with
+**In force:** `OBJ_FRONT_OD = 36.80 − FIT_PRESS = 36.65`, gauged in **PETG on
+a 0.40 nozzle at 0.12 layers**. `CAL_MATERIAL` and `PRINT_MATERIAL` are both
+PETG, so the bore bias is exactly zero — the only case in the table that is
+genuinely *measured* rather than estimated.
+
+PLA at 0.20 read 36.85 on the same criterion. **Material and layer height
+moved together**, so that 0.05 belongs to the pair of them and cannot be
+split between them from this data. If the layer height changes again, print
+a fresh ladder rather than assuming which half it was.
+
+> **A ladder's winner must not land on an end rung.** The first PETG ladder
+> went out centred a full `FIT_PRESS` high, because `--nominal` was given a
+> winning ring's *label* instead of the objective diameter — the ladder adds
+> the fit allowance itself. Its winner landed on the bottom rung, which is a
+> bound and not a value. `build.py` now prints the ring labels for every
+> gauge it writes, so a mis-centred ladder is visible before it prints. `CAL_NOZZLE` / `CAL_LAYER` now agree with
 `NOZZLE` / `LAYER`, so the build summary no longer flags the calibration as
 stale.
 

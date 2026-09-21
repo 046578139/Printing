@@ -25,12 +25,23 @@ All units are millimetres, all angles degrees.
 # !! HARDWARE. Confirm them with the printed gauges before committing to a
 # !! full set. See docs/MEASUREMENTS.md.
 
-OBJ_FRONT_OD    = 36.70   # [CONFIRMED in PLA on a 0.40 nozzle] re-gauge ladder
-                          # (0.10 steps) picked modelled bore 36.85.
-                          # 36.85 - FIT_PRESS = 36.70. The 0.60 nozzle had put
-                          # this at 36.75, so the hotend change moved it only
-                          # 0.05 - less than predicted, but measured beats
-                          # estimated. See docs/CALIBRATION.md.
+OBJ_FRONT_OD    = 36.65   # [GAUGED] PETG, 0.40 nozzle, 0.12 layer. The 36.80
+                          # ring is very tight but goes on; 36.90 is loose
+                          # enough to slide off. Bracketed, not bounded.
+                          #
+                          # This is NOT a caliper reading of the bezel and is
+                          # not meant to be. It is (bezel diameter + whatever
+                          # this material, nozzle and layer do to a hole), and
+                          # holding it that way is the whole point: every part
+                          # downstream is printed on the same setup, so the
+                          # process offset cancels instead of being estimated.
+                          # It stays true only while CAL_MATERIAL, CAL_NOZZLE
+                          # and CAL_LAYER match what is in the machine.
+                          #
+                          # PLA at 0.20 read 36.85 on the same criterion, so
+                          # this setup delivers 0.05 larger for the same
+                          # modelled bore. Material and layer moved together,
+                          # so that 0.05 is the pair of them, not either alone.
 OBJ_FRONT_LEN   = 13.00   # [CONFIRMED] the bezel inserts the full bore depth
 # WHICH SEAT. The collar goes on the LOCKING COLLAR - the fixed band
 # immediately behind the focus ring - and NOT on the front bezel the housing
@@ -73,16 +84,16 @@ OBJ_COLLAR_LEN  = 12.00   # [VERIFY - and now the number that matters most]
 # So record what you calibrated in, and declare what you are printing now.
 # The bias is then just the difference between the two, and setting it
 # wrongly is no longer possible by forgetting.
-CAL_MATERIAL    = "PLA"      # material of the gauge that set OBJ_FRONT_OD
-PRINT_MATERIAL  = "PLA"      # material you are printing the parts in NOW
+CAL_MATERIAL    = "PETG"      # material of the gauge that set OBJ_FRONT_OD
+PRINT_MATERIAL  = "PETG"      # material you are printing the parts in NOW
 
 # ...and the hotend it was gauged on. A delivered bore is as much a property
 # of the nozzle as of the material: a 0.60 nozzle undersizes a hole by
 # roughly 0.20-0.35 mm, a 0.40 by roughly 0.10-0.20. Moving between them
 # shifts every fit by more than the whole design clearance, so a calibration
 # taken on one hotend is simply not valid on the other.
-CAL_NOZZLE      = 0.40       # 36.85 ring read on the 0.40 nozzle
-CAL_LAYER       = 0.20
+CAL_NOZZLE      = 0.40       # 36.80 ring read on the 0.40 nozzle
+CAL_LAYER       = 0.12
 # Set these to NOZZLE / LAYER once the fine ladder has been re-read on the
 # new hotend, and BORE_BIAS goes back to being exactly zero.
 
@@ -126,7 +137,10 @@ def calibration_note() -> str:
 BORE_SHIFT = {
     "PLA":     0.00,   # reference
     "PLA-CF":  0.00,
-    "PETG":   +0.05,   # estimate
+    "PETG":   -0.05,   # MEASURED - and the sign was wrong before.
+                       # PETG delivers a LARGER hole than PLA for
+                       # the same modelled bore, so it needs less
+                       # added, not more. The table said +0.05.
     "ASA":    +0.10,   # estimate
     "PET-CF":  0.00,   # estimate; amorphous, CF-suppressed shrink
     "PAHT-CF":+0.10,   # estimate; semi-crystalline
