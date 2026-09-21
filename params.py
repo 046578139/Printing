@@ -381,6 +381,33 @@ GAUGE_TEXT_D    = DETAIL_DEPTH
 GAUGE_PITCH_PAD = 3.00
 
 
+def set_nozzle(nozzle: float, layer: float = None) -> None:
+    """Re-derive every nozzle-dependent feature for a different hotend.
+
+    The thin features are computed at import time, so changing NOZZLE alone
+    does nothing. Call this instead, then rebuild.
+
+    Changing the nozzle CHANGES THE DELIVERED BORES, which means the fit
+    calibration does not carry across - re-gauge afterwards. That is the
+    real cost of switching, and it is why it is worth batching with the move
+    to production material rather than paying it twice.
+    """
+    g = globals()
+    g["NOZZLE"] = nozzle
+    if layer is not None:
+        g["LAYER"] = layer
+    g["THIN_WALL"] = round(nozzle * 1.25, 2)
+    g["WALL_MIN"] = round(nozzle * 3, 2)
+    g["WALL_STD"] = round(nozzle * 6, 2)
+    g["DETAIL_DEPTH"] = round(g["LAYER"] * 3, 2)
+    g["KF_WALL"] = g["THIN_WALL"]
+    g["KF_RIM"] = round(nozzle * 2, 2)
+    g["TEX_DEPTH"] = g["DETAIL_DEPTH"]
+    g["TEX_WALL"] = round(nozzle * 1.6, 2)
+    g["MARK_DEPTH"] = g["DETAIL_DEPTH"]
+    g["GAUGE_TEXT_D"] = g["DETAIL_DEPTH"]
+
+
 def summary() -> str:
     return "\n".join([
         "  objective front OD (verify) : %6.2f" % OBJ_FRONT_OD,

@@ -29,10 +29,32 @@ Drop to 0.4 / 0.2 for:
 - **Anything final**, and anything in carbon fill — which needs a hardened
   nozzle regardless.
 
-If you do switch, set `NOZZLE` and `LAYER` in `params.py` to match and
-rebuild. The kill flash cell wall, texture groove, rim and deboss depths all
-follow automatically. **Then re-gauge** — a different nozzle delivers a
-different bore, so the calibration does not carry across.
+If you do switch:
+
+```
+python3 build.py --nozzle 0.4 --layer 0.2        # whole set
+python3 build.py cap --nozzle 0.4 --layer 0.2 --tag fine   # just one part
+```
+
+Cell wall, texture groove, rim and deboss depths all follow automatically.
+
+### When to switch — batch it, don't pay twice
+
+**A nozzle change invalidates the fit calibration.** A different nozzle
+delivers a different bore, so the gauge reading you earned at 0.6/0.3 does
+not carry across and every press fit has to be re-gauged.
+
+Right now the housing fits, and that is a calibrated state worth keeping.
+You will have to re-gauge anyway when you move to PAHT-CF or ASA, because
+every production filament needs its own calibration and carbon fill needs a
+hardened nozzle regardless. **Do both at once** and you pay the calibration
+cost once instead of twice.
+
+The exception is the **cap**, which can switch on its own. Its only fit is
+0.35 mm of clearance over the register — loose enough that a nozzle change
+cannot break it. So if you want the grip texture to read as hexagons rather
+than bumps, print `04_flip_cap_fine` at 0.4/0.2 and leave everything else
+where it is.
 
 ## Orientation
 

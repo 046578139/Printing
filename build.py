@@ -11,6 +11,7 @@ the kind of thing you only notice after a two-hour print.
     python3 build.py gauge --nominal 39.2 --step 0.1 --count 7
     python3 build.py gauge:shroud --step 0.1 --count 7   # one ladder only
     python3 build.py gauge:shroud --tag nylon --step 0.05 --count 7
+    python3 build.py cap --nozzle 0.4 --layer 0.2 --tag fine
 """
 
 import os
@@ -110,6 +111,10 @@ def parse(argv):
 def main(argv):
     os.makedirs(OUT, exist_ok=True)
     want, opts = parse(argv)
+    if "nozzle" in opts:
+        P.set_nozzle(opts["nozzle"], opts.get("layer"))
+        print("  rebuilding for a %.2f nozzle / %.2f layer"
+              % (P.NOZZLE, P.LAYER))
     want = want or list(PARTS) + ["gauge"]
     rows = []
     t0 = time.time()
@@ -118,7 +123,8 @@ def main(argv):
         if name not in want:
             continue
         fn, g, meta = PARTS[name]
-        rows.append(build_one(name, fn(), g, meta, FILENAME[name]))
+        out = FILENAME[name] + ("_" + opts["tag"] if "tag" in opts else "")
+        rows.append(build_one(name, fn(), g, meta, out))
 
     GAUGES = (
         ("shroud", "shroud bore", P.OBJ_FRONT_OD, P.FIT_PRESS, "05_gauge_shroud"),
