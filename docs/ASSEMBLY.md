@@ -115,6 +115,39 @@ To fit `01d`: pinch the two paddles, spread them until the bore clears the
 barrel, slide it into place, release. About 9 N at the paddles — firm, not
 a struggle.
 
+### Which ring wins depends on the diameter
+
+The lever collar's advantage is **not** unconditional, and it took a
+mis-sized test run to notice.
+
+Radial spread scales with the barrel: `D − D_free·sin γ`. Axial spread does
+not — it is `π × expansion`, a fixed cost no matter how small the ring gets.
+So as the barrel shrinks, the radial route gets cheaper while the axial one
+stays put, and somewhere they cross:
+
+| Barrel | `01c` push-on 230° | `01d` lever 290° | Winner |
+|---|---|---|---|
+| 34 | 0.95 % | 1.01 % | **push-on** |
+| 36 | 0.88 % | 0.90 % | **push-on** |
+| 38 | 0.82 % | 0.81 % | **lever** |
+| 40 | 0.77 % | 0.73 % | **lever** |
+| 41 | 0.75 % | 0.70 % | **lever** |
+| 43 | 0.70 % | 0.64 % | **lever** |
+
+**Crossover is around Ø38 mm.** Above it the lever ring is strictly better,
+as designed. Below it the fixed cost of expanding a small ring by
+`π × expansion` outweighs the shrinking chord, and the plain push-on ring is
+the better part — on top of which a small seat is likely a *waist* between
+two larger diameters, which blocks the axial approach the lever ring needs
+in the first place.
+
+Both rings stay in the set for exactly this reason. Gauge the barrel, then
+pick.
+
+One thing to fix when that number lands: `SNAP_INTERF` is a fixed 2.00 mm,
+which is 4.9 % of a Ø41 bore but 5.9 % of a Ø34 one. It should scale with
+diameter rather than sit at a constant.
+
 ### The snap ring's numbers
 
 Wrap is 230°, so it captures well past the equator. The barrel has to pass
