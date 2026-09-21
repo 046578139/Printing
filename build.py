@@ -30,6 +30,7 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stl")
 # name -> (builder, expected genus, description, print orientation)
 PARTS = {
     "collar": (collar.build, 4, collar.META),
+    "collar_proto": (collar.build_proto, 4, collar.META_PROTO),
     "shroud": (shroud.build, 1, shroud.META),
     "killflash": (killflash.build, None, killflash.META),
     "cap": (cap.build, 2, cap.META),
@@ -37,6 +38,7 @@ PARTS = {
 
 FILENAME = {
     "collar": "01_collar",
+    "collar_proto": "01b_collar_proto",
     "shroud": "02_killflash_housing",
     "killflash": "03_killflash_insert",
     "cap": "04_flip_cap",

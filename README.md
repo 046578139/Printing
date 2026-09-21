@@ -24,7 +24,8 @@ retained with 1/8 in shock cord.
 
 | File | Part | What it does |
 |---|---|---|
-| `stl/01_collar.stl` | Retention collar | Split band clamp, M3 pinch screw. Anchors the shock cord and sets the cap's rotational orientation. |
+| `stl/01_collar.stl` | Retention collar | Split band clamp, M3 pinch screw. Anchors the shock cord and sets the cap's rotational orientation. **Needs the collar gauge first.** |
+| `stl/01b_collar_proto.stl` | Collar, wide gap | Prototype only. Clamps 42.20 → 38.06 instead of 41.40 → 40.57, so it grips whatever the barrel turns out to be. Needs an M3 × 30 screw. |
 | `stl/02_killflash_housing.stl` | Kill flash housing | Presses onto the objective bezel, carries the kill flash, gives the cap a register to close on. |
 | `stl/03_killflash_insert.stl` | Kill flash | Printed honeycomb. 71 % open area, 39° off-axis cutoff. |
 | `stl/04_flip_cap.stl` | Flip cap | Bungee-retained cover. Cord bosses at 3 and 9, thumb tab at 6, hex grip, centre mark. |
@@ -33,6 +34,18 @@ retained with 1/8 in shock cord.
 
 Every part is symmetric about the vertical plane — there is no left and
 right. Print two of each for a binocular.
+
+### Prototyping in PLA
+
+Everything is calibrated for PLA right now (`CAL_MATERIAL == PRINT_MATERIAL`,
+so the bore bias is exactly zero — the measured case). Print the whole set
+in PLA, use `01b_collar_proto` in place of the collar, and you can shake
+down cord routing, flip clearance, IPD spacing and glove ergonomics before
+the collar barrel has been gauged and before committing any engineering
+filament.
+
+**Do not field a PLA set.** It creeps under the collet's sustained hoop load
+and softens around 55–60 °C; an afternoon on a dashboard will destroy it.
 
 ## Quick start
 

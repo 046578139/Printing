@@ -175,6 +175,32 @@ def test_collar():
     probe(m, "collar pinch gap",        (0.0, -(P.COL_OD / 2 - 1.0), 5.0), False)
 
 
+def test_collar_proto():
+    import math as _m
+    g = collar.geom(P.COL_PROTO_BORE, P.COL_PROTO_GAP)
+    hi, lo = collar.clamp_range(g)
+    check(hi - lo > 2.5,
+          "prototype collar only spans %.2f mm - not enough to be worth "
+          "printing before the barrel is gauged" % (hi - lo))
+    check(lo < P.COL_BORE < hi or lo < P.OBJ_COLLAR_OD < hi,
+          "prototype collar range %.2f-%.2f does not cover the current "
+          "nominal" % (lo, hi))
+    check(g["gap"] < _m.pi * g["bore"] * 0.12,
+          "pinch gap is %.0f%% of the circumference - the band would no "
+          "longer wrap enough to grip"
+          % (100 * g["gap"] / (_m.pi * g["bore"])))
+    # Screw has to physically span both lugs plus the open gap.
+    need = 2 * g["x_lug"]
+    check(need < 32.0,
+          "prototype collar needs a %.0f mm screw - longer than M3 stock"
+          % need)
+    m = collar.build_proto()
+    topology(m, "collar_proto", expect_genus=4)
+    probe(m, "proto ear hole +X", (P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "proto ear hole -X", (-P.CORD_RADIUS, 0.0, 2.0), False)
+    probe(m, "proto bore clear", (0.0, P.COL_PROTO_BORE / 2 - 1.5, 5.5), False)
+
+
 def test_shroud():
     m = shroud.build()
     topology(m, "shroud", expect_genus=1)
@@ -272,7 +298,8 @@ def test_cap():
 
 
 def main():
-    for fn in (test_interfaces, test_collar, test_shroud, test_killflash, test_cap):
+    for fn in (test_interfaces, test_collar, test_collar_proto, test_shroud,
+               test_killflash, test_cap):
         name = fn.__name__.replace("test_", "")
         before = len(FAILS)
         fn()

@@ -1,8 +1,12 @@
 # Assembly
 
 Per eye: 1 collar, 1 kill flash housing, 1 kill flash insert, 1 flip cap,
-1 M3 socket head cap screw (16 mm), 1 M3 hex nut, and about 240 mm of
-1/8 in (3.175 mm) shock cord. Double it for a binocular.
+1 M3 socket head cap screw, 1 M3 hex nut, and about 240 mm of 1/8 in
+(3.175 mm) shock cord. Double it for a binocular.
+
+Screw length depends on which collar you print: **16 mm** for
+`01_collar`, **30 mm** for `01b_collar_proto` — the prototype's pinch gap
+is 13 mm wide, so the screw has to span a lot more air before it closes.
 
 Every part is symmetric about the vertical plane, so there is **no left and
 right** — print two of each and they fit either pod.
@@ -35,6 +39,12 @@ Snug it until the collar will not rotate under a firm hand twist. It does
 not need to be tight — you are clamping an optical assembly, not a
 suspension arm. If the gap closes completely before it grips, the bore is
 too big; if it grips with the gap barely closed, that is correct.
+
+On the **prototype** collar the gap will close a long way before it grips,
+and that is expected — that is the whole point of it. Note roughly how far,
+though: a gap that ends up near 0 means the real barrel is close to
+38 mm, and one that stays wide means it is close to 42. That is a free
+coarse reading while you wait to print the proper gauge.
 
 **4. Cord.**
 Cut four pieces about 120 mm each. Per side, per eye:

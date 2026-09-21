@@ -216,6 +216,15 @@ M3_HEAD_DEPTH   = 3.40
 M3_NUT_AF       = 5.60    # DIN 934 M3 hex nut across flats + clearance
 M3_NUT_DEPTH    = 2.80
 
+# Prototype-only wide-gap collar. The production gap of 2.60 mm is worth
+# only 0.83 mm of diameter range, which is fine once OBJ_COLLAR_OD is known
+# and useless before it. These numbers clamp anywhere from 42.20 down to
+# ~38.06, covering the whole plausible spread for this barrel, so the cord
+# and flip action can be prototyped before the collar has been gauged.
+# Needs an M3 x 30 screw rather than x 16.
+COL_PROTO_BORE  = 42.20
+COL_PROTO_GAP   = 13.00
+
 # Cord ears at 3 and 9 o'clock. Hole runs fore/aft so the cord exits forward.
 EAR_W           = 10.00
 EAR_T           = 5.20    # radial thickness

@@ -23,18 +23,47 @@ from lib.solids import (tube, box, cyl, poly, rect2d, fillet2d, hexagon2d,
 import manifold3d as m3d
 from manifold3d import Manifold, JoinType
 
-R_OUT  = P.COL_OD / 2.0
+def geom(bore: float = None, gap: float = None) -> dict:
+    """Derive the collar's layout from a bore and a pinch gap.
+
+    Kept as a function so a wider-gap prototype collar can be generated from
+    the same code. The cord ear always reaches out to CORD_RADIUS, whatever
+    the bore, so the bungee still runs parallel to the optical axis.
+    """
+    bore = P.COL_BORE if bore is None else bore
+    gap = P.COL_GAP if gap is None else gap
+    r_out = bore / 2.0 + P.COL_WALL
+    return dict(
+        bore=bore, gap=gap, r_out=r_out,
+        ear_proj=P.CORD_RADIUS + P.CORD_HOLE / 2 + P.CORD_EDGE_WALL - r_out,
+        y_lug=-(r_out + P.LUG_PROJ),          # outer face of the clamp lugs
+        y_scr=-(r_out + P.LUG_PROJ * 0.55),   # screw axis
+        z_scr=P.LUG_H / 2.0,
+        x_lug=gap / 2.0 + P.LUG_W,            # outer face of each lug in X
+    )
+
+
+# Module-level defaults for the standard collar.
+_G     = geom()
+R_OUT  = _G["r_out"]
 R_BORE = P.COL_BORE / 2.0
-Y_LUG  = -(R_OUT + P.LUG_PROJ)          # outer face of the clamp lugs
-Y_SCR  = -(R_OUT + P.LUG_PROJ * 0.55)   # screw axis
-Z_SCR  = P.LUG_H / 2.0
-X_LUG  = P.COL_GAP / 2.0 + P.LUG_W      # outer face of each lug in X
+Y_LUG  = _G["y_lug"]
+Y_SCR  = _G["y_scr"]
+Z_SCR  = _G["z_scr"]
+X_LUG  = _G["x_lug"]
 
 
-def _ear(angle: float) -> Manifold:
+def clamp_range(g: dict) -> tuple:
+    """(largest, smallest) barrel this collar can actually grip. Closing the
+    pinch gap by g shortens the bore circumference by exactly g."""
+    return g["bore"], g["bore"] - g["gap"] / math.pi
+
+
+def _ear(angle: float, g: dict) -> Manifold:
     """Cord ear: a flat tab on the rear face with a fore/aft cord hole."""
+    R_OUT = g["r_out"]
     x0 = R_OUT - 2.5                     # overlap into the band
-    x1 = R_OUT + P.EAR_PROJ
+    x1 = R_OUT + g["ear_proj"]
     prof = rect2d(x1 - x0, P.EAR_W).translate(((x0 + x1) / 2.0, 0.0))
     prof = fillet2d(prof, P.EAR_FILLET)
     ear = prof.extrude(P.EAR_T)
@@ -43,11 +72,12 @@ def _ear(angle: float) -> Manifold:
     return (ear - hole).rotate([0, 0, angle])
 
 
-def _clamp_lugs() -> Manifold:
+def _clamp_lugs(g: dict) -> Manifold:
     """Two blocks flanking the pinch gap, plus the screw and nut features."""
+    Y_LUG, Y_SCR, Z_SCR, X_LUG = g["y_lug"], g["y_scr"], g["z_scr"], g["x_lug"]
     depth = abs(Y_LUG)
     lug = box(P.LUG_W, depth, P.LUG_H, center=False)
-    right = lug.translate([P.COL_GAP / 2.0, Y_LUG, 0.0])
+    right = lug.translate([g["gap"] / 2.0, Y_LUG, 0.0])
     left  = lug.translate([-X_LUG,           Y_LUG, 0.0])
     lugs = union([right, left])
 
@@ -71,29 +101,47 @@ def _clamp_lugs() -> Manifold:
     return lugs - union(cuts)
 
 
-def build():
-    band = tube(P.COL_HEIGHT, P.COL_OD, P.COL_BORE)
-    part = union([band, _clamp_lugs(), _ear(0.0), _ear(180.0)])
+def build(bore: float = None, gap: float = None):
+    g = geom(bore, gap)
+    od = 2 * g["r_out"]
+
+    band = tube(P.COL_HEIGHT, od, g["bore"])
+    part = union([band, _clamp_lugs(g), _ear(0.0, g), _ear(180.0, g)])
 
     # Pinch gap, cut after the lugs exist so it splits them too.
-    span = R_OUT + P.LUG_PROJ + 6.0
-    gap = box(P.COL_GAP, span, P.COL_HEIGHT + 4.0, center=False) \
-        .translate([-P.COL_GAP / 2.0, -span, -2.0])
+    span = g["r_out"] + P.LUG_PROJ + 6.0
+    slot = box(g["gap"], span, P.COL_HEIGHT + 4.0, center=False) \
+        .translate([-g["gap"] / 2.0, -span, -2.0])
 
     # Re-cut the bore last: the lugs and ears both overlap into it.
-    bore = cyl(P.COL_HEIGHT + 4.0, P.COL_BORE, seg=SEG).translate([0, 0, -2.0])
+    bore_cut = cyl(P.COL_HEIGHT + 4.0, g["bore"], seg=SEG).translate([0, 0, -2.0])
 
-    part = part - union([gap, bore])
+    part = part - union([slot, bore_cut])
 
     # Edge breaks. Lead-in at the top of the bore so it starts onto the
     # barrel square; chamfers top and bottom outside.
     part = part - union([
-        bore_lead_in(P.COL_HEIGHT, P.COL_BORE, 1.0, True),
-        bore_lead_in(0.0, P.COL_BORE, 0.6, False),
-        chamfer_outer(P.COL_HEIGHT, P.COL_OD, 0.8, True),
-        chamfer_outer(0.0, P.COL_OD, 0.6, False),
+        bore_lead_in(P.COL_HEIGHT, g["bore"], 1.0, True),
+        bore_lead_in(0.0, g["bore"], 0.6, False),
+        chamfer_outer(P.COL_HEIGHT, od, 0.8, True),
+        chamfer_outer(0.0, od, 0.6, False),
     ])
     return part
+
+
+def build_proto():
+    """Wide-gap prototype collar.
+
+    The production collar has a 2.6 mm pinch gap, which is only 0.83 mm of
+    diameter range - fine once OBJ_COLLAR_OD is known, useless before. This
+    one opens the gap far enough to clamp anywhere across the plausible
+    spread, so cord routing and the flip action can be shaken down before
+    the barrel has been gauged.
+
+    It does not sit as round when clamped on a small barrel, and it needs a
+    longer screw. Not for the final set.
+    """
+    return build(P.COL_PROTO_BORE, P.COL_PROTO_GAP)
 
 
 META = dict(
@@ -101,4 +149,12 @@ META = dict(
     desc="Split band clamp with M3 pinch screw. Anchors the shock cord.",
     orient="REAR FACE DOWN (ears and lugs on the plate). No supports.",
     hardware="1x M3 socket head cap screw, 16 mm + 1x M3 hex nut, per eye.",
+)
+
+META_PROTO = dict(
+    name="01b_collar_proto",
+    desc="PROTOTYPE ONLY: wide-gap collar that clamps across a range of "
+         "barrel diameters, for use before OBJ_COLLAR_OD has been gauged.",
+    orient="REAR FACE DOWN (ears and lugs on the plate). No supports.",
+    hardware="1x M3 socket head cap screw, 30 mm + 1x M3 hex nut, per eye.",
 )
