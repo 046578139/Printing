@@ -27,18 +27,23 @@ slicer flags as a floating cantilever and is right to. Outboard of the band
 nothing is in the way, so the tab carries straight down to the plate there,
 clear of the outer arm by the same 0.40 mm the arms use.
 
-Which is why the lap is 50 degrees. Tabs at different heights could lap past
+Which is why the lap is 54 degrees. Tabs at different heights could lap past
 each other; tabs that both reach the bed cannot, so they have to stay apart.
 And a tab may not sit ON its arm's free end - it hangs half its width past it
 and welds that arm to the body. So each is inset 7 deg, which costs another
-14 deg of separation. What is left keeps the heads 3.7 mm apart even fully
+14 deg of separation. What is left keeps the heads 4.3 mm apart even fully
 squeezed. Insetting does not change the mechanism: the arms are rigid, so a
 tab turns with its arm by the same angle wherever it sits on it.
 
-    lap 50 deg at rest = 17.1 mm of arc
+    lap 54 deg at rest = 18.5 mm of arc
     squeeze consumes 11.9 deg = 4.1 mm -> bore grows 1.30 mm
-    38 deg = 13.0 mm still lapped at full expansion
-    2.9 N at the tabs, 0.66 % peak strain (2.3x margin in PLA)
+    42 deg = 14.4 mm still lapped at full expansion
+    2.6 N at the tabs, 0.64 % peak strain (2.3x margin in PLA)
+
+The tab heads sit ON the band, 0.70 mm off the OD. A long stem is a lever
+arm nothing here needs at 2.6 N, and it left the tabs standing proud of the
+cord ears, which are the one thing on this assembly that has to catch a cord
+and nothing else.
 
 Three ways this part can be built welded solid, all of which still give one
 watertight shell with the correct bore:

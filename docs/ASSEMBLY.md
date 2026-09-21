@@ -139,7 +139,7 @@ That is a spring hose clip, and it is what the recorder does.
 | `01c` push-on | 230° | push on radially | spread | 0.65 % | 12.1 N | 0.21 % |
 | `01d` lever | 290° | expand, slide on | spread | 0.45 % | 6.5 N | 0.21 % |
 | `01e` pinch | 340° | expand, slide on | spread | 0.37 % | 4.9 N | 0.22 % |
-| **`01f` lapped** | **410°** | **expand, slide on** | **squeeze** | **0.66 %** | **2.9 N** | **0.22 %** |
+| **`01f` lapped** | **414°** | **expand, slide on** | **squeeze** | **0.64 %** | **2.6 N** | **0.22 %** |
 
 *(Ø36.90 barrel, PLA at 2750 MPa, 0.89–0.90 mm interference on all four, so
 the seated column is the same by construction and only the cost of getting
@@ -148,17 +148,17 @@ there differs.)*
 `01f` is much the lightest squeeze of the four and the only one that reads as
 a genuinely closed circle. It is not the lowest strain — `01e` is — because
 `01f` carries its load through two thin lapped arms rather than one thick
-band. 0.66 % still leaves 2.3× margin in PLA and considerably more in
+band. 0.64 % still leaves 2.3× margin in PLA and considerably more in
 PAHT-CF, and it buys the right *motion*.
 
 #### How the lap is built, and the one thing it forces
 
-Over 50° the band splits in thickness: a 1.20 mm inner arm, a 0.40 mm
+Over 54° the band splits in thickness: a 1.20 mm inner arm, a 0.40 mm
 sliding gap, a 1.60 mm outer arm. The split is deliberately uneven. The
 inner arm gets a full-wall flange back above the gap, so an even split would
 leave the outer arm carrying the whole squeeze on a third of the section at
 roughly a fifth more strain than it needs to. Moving 0.20 mm of
-wall outward and the divide up to 6.5 mm brings the worst case to 0.66 % and
+wall outward and the divide up to 6.5 mm brings the worst case to 0.64 % and
 costs nothing.
 
 The step forces one thing: **the inner arm's tab cannot get out radially**,
@@ -174,13 +174,19 @@ carries straight down to the plate, clear of the outer arm by the same
 or bridges that 0.30 mm gap above the outer arm — a print-in-place
 clearance, not an overhang. **No supports anywhere.**
 
-That in turn is why the lap is 50° and not 30°. Tabs at different heights
+That in turn is why the lap is 54° and not 30°. Tabs at different heights
 could lap past each other; two tabs that both reach the bed cannot, so they
 have to stay apart. And a tab may not sit *on* its arm's free end — it hangs
 half its width past it and welds that arm to the body — so each is inset 7°,
 costing another 14°. What is left keeps the heads 9.4 mm apart at rest and
-3.7 mm at full squeeze. Insetting does not change the mechanism: the arms
+4.3 mm at full squeeze. Insetting does not change the mechanism: the arms
 are rigid, so a tab turns with its arm by the same angle wherever it sits.
+
+The heads themselves sit **on** the band — 0.70 mm off the OD — rather than
+standing off on a stem. A long stem is a lever arm nothing here needs at a
+2.6 N squeeze, and it made the tabs the most snag-prone thing on the part,
+standing proud of the cord ears. Pulling them in cost 4° of lap to keep the
+two heads from meeting, and the whole tab now sits 1.6 mm *inside* the ears.
 
 > **Check the lap is free before you fit it.** Squeeze the tabs on the bench
 > first. If the ring does not visibly grow, the 0.40 mm radial gap or the

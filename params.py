@@ -367,7 +367,13 @@ PINCH_CLEAR     = 0.40    # extra expansion so it slides rather than scrapes
 PINCH_BORE      = OBJ_COLLAR_OD - PINCH_INTERF + BORE_BIAS
 PINCH_GAP_AT    = 90.0    # o'clock position of the gap; 90 = top
 
-PINCH_TAB_PROJ  = 7.00    # how far a tab reaches past the band OD
+# 4.00, not 7.00. At 7 the head stood off on a long stem, which is a lever
+# arm nobody needs - the squeeze is 3 N - and the most snag-prone thing on
+# the part. At 4 the head's inner edge sits 0.70 mm off the band, so it reads
+# as a circle stemming straight off the ring, and the whole tab pulls 3 mm
+# back inside the cord ears. It costs 12 % more squeeze force and, on 01f,
+# 4 degrees of lap to keep the two heads from meeting.
+PINCH_TAB_PROJ  = 4.00    # how far a tab reaches past the band OD
 PINCH_TAB_W     = 4.20    # stem width
 PINCH_TAB_HEAD  = 6.60    # rounded head - this is what your fingertip pulls on
 PINCH_ROUND     = 1.40
@@ -405,10 +411,10 @@ PINCH_EDGE      = 0.80    # top edge break; bottom is the plate face, stays flat
 # costs 14 deg of separation; the free ends need 1.5 deg each so they are not
 # butted at rest; and the squeeze itself eats 11.9 deg. What is left has to
 # keep the two tab heads apart, because they both reach the plate and cannot
-# pass. 50 leaves 3.7 mm at full squeeze. Insetting does NOT change the
+# pass. 54 leaves 4.4 mm at full squeeze. Insetting does NOT change the
 # mechanism - the arms are rigid, so both tabs turn with their arm by the
 # same angle wherever they sit on it.
-LAP_DEG         = 50.00   # how far the ends lap at rest
+LAP_DEG         = 54.00   # how far the ends lap at rest
 LAP_TAB_INSET   = 7.00    # deg each tab sits inboard of its own free end
 LAP_END_CLEAR   = 1.50    # deg between a free end and the step it retreats
                           # from, so nothing is butted solid at rest
