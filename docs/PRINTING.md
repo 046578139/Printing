@@ -69,7 +69,7 @@ flash seat.
 | `01_collar` | **Rear face down** — cord ears and clamp lugs on the plate | Ears sit at the bottom so they are not a mid-air overhang; the hex nut pocket is rotated point-up so it bridges itself |
 | `02_killflash_housing` | **Front face down** — register on the plate | Makes the kill flash seat an upward-opening pocket. The only overhang is a 1.3 mm shoulder ledge, which bridges clean |
 | `03_killflash_insert` | **Flat**, either way up | Symmetric |
-| `04_flip_cap` | **Front face down** — decorated face on the plate | Register pocket, thumb scoop and cord holes all open upward; the grip texture is debossed rather than raised specifically so the face can lie flat |
+| `04_flip_cap`, `04b`, `04c` and every `_inlay` | **Front face down** — decorated face on the plate | Register pocket, thumb scoop and cord holes all open upward; the grip texture is debossed rather than raised specifically so the face can lie flat |
 | `05/06_gauge` | **Flat as generated** | — |
 
 No supports on anything. If your slicer wants to add some, you have it the
@@ -130,6 +130,39 @@ will lift at a corner otherwise. The debossed grip texture and centre mark
 are on the plate side, so plate finish is what you see — a smooth PEI sheet
 gives a satin face, a textured sheet gives a matte one. For night vision,
 **textured**: no glint.
+
+### Two-tone face — optional
+
+The decorated face can be printed in two or three filaments. Every recess on
+it has a matching **inlay** file that fills it exactly flush:
+
+| Cap | Lettering inlay | Hex field inlay |
+|---|---|---|
+| `04_flip_cap` | `04_inlay_mark` | `04_inlay_hex` |
+| `04b_flip_cap_FUCK` | `04b_inlay_FUCK` | `04b_inlay_hex_FUCK` |
+| `04c_flip_cap_YOU` | `04c_inlay_YOU` | `04c_inlay_hex_YOU` |
+
+In the slicer: load the cap, then **right-click → Add Part → Load** each
+inlay you want, and assign it a filament. They come in already aligned to the
+cap, so **do not move or rotate them** — that is the whole reason they are
+separate files rather than something to position by eye.
+
+Mix freely: lettering only, field only, or both in different colours. Take
+the inlays from the same cap as the body, though. The hex field is cut around
+the lettering, so `04b_inlay_hex_FUCK` on a YOU cap puts plugs where the
+letters are.
+
+**This is the easier print, not the harder one.** Debossed and printed face
+down, every letter floor and every dimple floor is a ceiling bridged over
+air. Filled with a second filament there is no void left to bridge — the
+whole face builds off the plate as one solid first layer.
+
+What it costs is purge. The recesses are 0.60 mm deep, so the swaps are
+confined to the first five layers at 0.12 — but within those five layers the
+lettering is one compact region while the hex field is 30–40 plugs scattered
+over the whole face. Both want a tool change per layer regardless; the field
+just makes those layers longer. Five layers of swaps is a few grams of purge,
+not a few tens.
 
 ## Print order
 

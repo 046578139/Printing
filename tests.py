@@ -922,7 +922,9 @@ def test_mark():
     # complaint, because nothing here was looking at it.
     import build as buildmod
     for key, (_fn, _g, _meta) in buildmod.PARTS.items():
-        if not key.startswith("cap"):
+        # Caps only. The inlays that go WITH them are checked further down,
+        # against the recesses they fill, and carry no mark data of their own.
+        if not key.startswith("cap") or "inlay" in key:
             continue
         data = None if key == "cap" else "mark_" + key.split("_", 1)[1]
         mh = P.MARK_H if data is None else None
@@ -996,6 +998,78 @@ def test_mark():
     check(w < 12.0,
           "the mark is %.2f mm across - wide enough that its floor is a long "
           "bridge rather than a set of short ones" % w)
+
+    # MULTICOLOUR INLAYS. Each has to be the exact complement of the recess
+    # its cap cuts - not approximately, exactly. An inlay that overlaps the
+    # body leaves the slicer to arbitrate; one that falls short leaves a gap
+    # the colour boundary shows through. And the two inlays must not touch
+    # each other either: the hex field's keep-out around the lettering is the
+    # only thing standing between a plug and a letter stroke.
+    import build as bm
+    CAPS = {"cap": None, "cap_fuck": "mark_fuck", "cap_you": "mark_you"}
+
+    # Nothing may be registered as an inlay without landing in CAPS below -
+    # an untested inlay still builds, still validates and still exports.
+    for key in bm.PARTS:
+        if "inlay" not in key:
+            continue
+        owner = key.split("_inlay")[0].replace("_hex", "")
+        check(owner in CAPS,
+              "%s is built but belongs to no cap this test knows about" % key)
+
+    for capkey, data in CAPS.items():
+        body = bm.orient("cap", capmod.build(mark=data))
+        pieces = [("lettering", capmod.inlay(mark=data), P.MARK_DEPTH),
+                  ("hex field", capmod.hex_inlay(mark=data), P.TEX_DEPTH)]
+        for what, ily, depth in pieces:
+            ily = bm.orient("cap_inlay", ily)
+            check(ily.volume() > 0, "%s %s inlay is empty" % (capkey, what))
+            # No overlap and nothing lost: the union is exactly the sum.
+            check(abs((body + ily).volume()
+                      - (body.volume() + ily.volume())) < 1e-6,
+                  "%s %s inlay does not exactly complement its recess - the "
+                  "union is not the sum of the parts" % (capkey, what))
+            bb = ily.bounding_box()
+            check(abs(bb[2]) < 1e-6,
+                  "%s %s inlay does not sit on the plate (z starts at %.4f)"
+                  % (capkey, what, bb[2]))
+            check(abs(bb[5] - depth) < 1e-6,
+                  "%s %s inlay is %.3f tall, not the %.2f its recess is deep "
+                  "- it would sit proud or leave a void under it"
+                  % (capkey, what, bb[5], depth))
+
+        # Lettering against field: separate solids, and they must stay that
+        # way. TEX_MARK_CLEAR is checked as a number above; this checks the
+        # geometry it was supposed to produce.
+        lets, hexes = bm.orient("cap_inlay", pieces[0][1]), \
+            bm.orient("cap_inlay", pieces[1][1])
+        check((lets ^ hexes).volume() < 1e-9,
+              "%s: the lettering inlay and the hex inlay overlap - they would "
+              "fight over the same %.2f mm3" % (capkey, (lets ^ hexes).volume()))
+        # All three together still fill the face exactly once.
+        whole = body.volume() + lets.volume() + hexes.volume()
+        check(abs((body + lets + hexes).volume() - whole) < 1e-6,
+              "%s: cap plus both inlays is not a clean solid" % capkey)
+
+        mw, mh = traced_mark_size(None if data else P.MARK_H,
+                                  data or "mark_data")
+        bb = bm.orient("cap_inlay", pieces[0][1]).bounding_box()
+        check(abs((bb[3] - bb[0]) - mw) < 0.2 and abs((bb[4] - bb[1]) - mh) < 0.2,
+              "%s lettering inlay is %.2f x %.2f, not the %.2f x %.2f its cap "
+              "was cut for" % (capkey, bb[3] - bb[0], bb[4] - bb[1], mw, mh))
+
+        # Every plug has to be printable on its own. A hex plug is a free
+        # island in the second filament, fenced in by the body's first layer
+        # but not attached to it, so anything thinner than a line is lost.
+        plugs = hexes.decompose()
+        check(25 <= len(plugs) <= 60,
+              "%s hex inlay decomposed into %d pieces - the field is 30-40 "
+              "cells, so anything outside that means plugs have fused to "
+              "each other or gone missing" % (capkey, len(plugs)))
+        pbb = plugs[0].bounding_box()
+        check(min(pbb[3] - pbb[0], pbb[4] - pbb[1]) >= P.LINE_WIDTH * 2,
+              "%s hex plugs are %.2f mm across, under two %.2f mm lines"
+              % (capkey, min(pbb[3] - pbb[0], pbb[4] - pbb[1]), P.LINE_WIDTH))
 
     # Dimples, not pips: nothing on the decorated face may be an island.
     check(P.TEX_DIMPLE,

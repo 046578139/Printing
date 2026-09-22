@@ -44,6 +44,18 @@ PARTS = {
     "cap": (cap.build, 2, cap.META),
     "cap_fuck": (lambda: cap.build(mark="mark_fuck"), None, cap.META_FUCK),
     "cap_you": (lambda: cap.build(mark="mark_you"), None, cap.META_YOU),
+    # Multicolour. Each inlay is the exact complement of what the matching
+    # cap cuts away, so the pair loads as one object with two filaments.
+    "cap_inlay": (cap.inlay, None, cap.META_INLAY),
+    "cap_hex_inlay": (cap.hex_inlay, None, cap.META_INLAY_HEX),
+    "cap_fuck_inlay": (lambda: cap.inlay(mark="mark_fuck"), None,
+                       cap.META_INLAY_FUCK),
+    "cap_fuck_hex_inlay": (lambda: cap.hex_inlay(mark="mark_fuck"), None,
+                           cap.META_INLAY_HEX_FUCK),
+    "cap_you_inlay": (lambda: cap.inlay(mark="mark_you"), None,
+                      cap.META_INLAY_YOU),
+    "cap_you_hex_inlay": (lambda: cap.hex_inlay(mark="mark_you"), None,
+                          cap.META_INLAY_HEX_YOU),
 }
 
 FILENAME = {
@@ -60,6 +72,12 @@ FILENAME = {
     "cap": "04_flip_cap",
     "cap_fuck": "04b_flip_cap_FUCK",
     "cap_you": "04c_flip_cap_YOU",
+    "cap_inlay": "04_inlay_mark",
+    "cap_hex_inlay": "04_inlay_hex",
+    "cap_fuck_inlay": "04b_inlay_FUCK",
+    "cap_fuck_hex_inlay": "04b_inlay_hex_FUCK",
+    "cap_you_inlay": "04c_inlay_YOU",
+    "cap_you_hex_inlay": "04c_inlay_hex_YOU",
 }
 
 
@@ -90,7 +108,13 @@ def to_trimesh(man):
 def validate(name, man, expect_genus):
     errs, warns = [], []
     ncomp = len(man.decompose())
-    if ncomp != 1:
+    # An inlay is loose pieces by nature - one shell per letter, one per hex
+    # plug - so a shell count above 1 is correct there, not a fault.
+    # Everything else must be a single connected body.
+    if "inlay" in name:
+        if ncomp < 1:
+            errs.append("inlay is empty")
+    elif ncomp != 1:
         errs.append("%d disconnected shells (must be 1)" % ncomp)
     if man.volume() <= 0:
         errs.append("non-positive volume")
