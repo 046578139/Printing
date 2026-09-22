@@ -12,6 +12,7 @@ the kind of thing you only notice after a two-hour print.
     python3 build.py gauge:shroud --step 0.1 --count 7   # one ladder only
     python3 build.py gauge:shroud --tag nylon --step 0.05 --count 7
     python3 build.py cap --nozzle 0.4 --layer 0.2 --tag fine
+    python3 build.py plate_pair          # a whole plate in one STL
 """
 
 import os
@@ -25,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import params as P
 from parts import (collar, snapcollar, pinchcollar, lapcollar,
-                   cinchcollar, shroud, killflash, cap, gauge)
+                   cinchcollar, shroud, killflash, cap, gauge, plate)
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stl")
 
@@ -58,6 +59,24 @@ PARTS = {
                           cap.META_INLAY_HEX_YOU),
 }
 
+
+# Whole plates: several parts in one STL, already laid out. The parts stay
+# separate shells - see parts/plate.py for the two things this cannot do.
+def _plate(*items):
+    """items: (PARTS key, count). Built through orient() so a plate can
+    never disagree with the single-part file about which way up it goes."""
+    return lambda: plate.build([(orient(k, PARTS[k][0]()), n) for k, n in items])
+
+
+SET = (("collar_cinch", 1), ("shroud", 1), ("killflash", 1), ("cap", 1))
+
+PARTS.update({
+    "plate_set": (_plate(*SET), None, plate.META_SET),
+    "plate_pair": (_plate(*[(k, 2) for k, _ in SET]), None, plate.META_PAIR),
+    "plate_caps": (_plate(("cap_fuck", 1), ("cap_you", 1)), None,
+                   plate.META_CAPS),
+})
+
 FILENAME = {
     "collar": "01_collar",
     "collar_proto": "01b_collar_proto",
@@ -78,6 +97,9 @@ FILENAME = {
     "cap_fuck_hex_inlay": "04b_inlay_hex_FUCK",
     "cap_you_inlay": "04c_inlay_YOU",
     "cap_you_hex_inlay": "04c_inlay_hex_YOU",
+    "plate_set": "10_plate_set",
+    "plate_pair": "11_plate_pair",
+    "plate_caps": "12_plate_caps_FUCK_YOU",
 }
 
 
@@ -114,6 +136,11 @@ def validate(name, man, expect_genus):
     if "inlay" in name:
         if ncomp < 1:
             errs.append("inlay is empty")
+    elif name.startswith("plate"):
+        # A plate is loose parts by definition. What must NOT happen is two
+        # of them touching: that would come off the bed as one lump.
+        if ncomp < 2:
+            errs.append("plate has %d shells - parts have fused" % ncomp)
     elif ncomp != 1:
         errs.append("%d disconnected shells (must be 1)" % ncomp)
     if man.volume() <= 0:

@@ -164,6 +164,40 @@ over the whole face. Both want a tool change per layer regardless; the field
 just makes those layers longer. Five layers of swaps is a few grams of purge,
 not a few tens.
 
+## One-file plates
+
+Three files carry a whole plate, parts already laid out and oriented:
+
+| File | What's on it | Footprint |
+|---|---|---|
+| `10_plate_set` | One pod: cinch collar, housing, kill flash, cap | 180 x 97 mm |
+| `11_plate_pair` | A full binocular set, two of each | 204 x 151 mm |
+| `12_plate_caps_FUCK_YOU` | Both custom caps | 128 x 56 mm |
+
+Drop one on the bed and slice. Everything is spaced 8 mm apart, which is a
+brim's width, and nothing needs rotating.
+
+Two things a plate **cannot** do:
+
+**Colour.** An STL carries geometry and nothing else. The cap inlays are
+separate files precisely so the slicer can hand each one its own filament;
+merged onto a plate they would just be more plastic. Two-tone stays on the
+individual files above.
+
+**Per-part settings, unless you load it as multiple parts.** The kill flash
+wants 1 wall loop, 0 top/bottom and thin-wall detection ON, and the rest of
+the set very much does not. When the slicer asks *"multi-part object
+detected — load as a single object with multiple parts?"* answer **yes**:
+you can then right-click the insert in the object tree and set them on that
+part alone. Answer no and the whole plate gets one set of settings, and the
+insert comes out a disc full of holes.
+
+If you would rather not deal with that, print `10_plate_set` without the
+insert selected and run `03_killflash_insert` on its own — it is 25 minutes.
+
+Each plate has a matching `.svg` next to it in `stl/`, a top view of the
+layout on the bed. `python3 tools/plate_preview.py` regenerates them.
+
 ## Print order
 
 1. **`05_gauge_shroud` and `06_gauge_collar` first.** ~20 min each. Do not

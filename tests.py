@@ -1154,12 +1154,68 @@ def test_export_orientation():
               "%s should not be reoriented on export" % name)
 
 
+def test_plate():
+    """Combined plates. One STL, several parts - and the whole value of it
+    is that the parts stay SEPARATE. Two that touch come off the bed as one
+    lump, and nothing downstream would tell you: a fused plate is still
+    watertight, still a legal mesh, still slices."""
+    import build as bm
+    from parts import plate
+
+    BED = 250.0
+    for key in [k for k in bm.PARTS if k.startswith("plate")]:
+        fn, _g, _meta = bm.PARTS[key]
+        m = fn()
+        shells = m.decompose()
+
+        # Nothing merged and nothing lost: the plate is exactly its parts.
+        check(abs(sum(sh.volume() for sh in shells) - m.volume()) < 1e-6,
+              "%s: shell volumes do not sum to the plate" % key)
+        check(len(shells) >= 2, "%s: %d shells - parts have fused"
+              % (key, len(shells)))
+
+        bbs = [sh.bounding_box() for sh in shells]
+        # Every part still on the bed, not floating and not sunk.
+        for i, b in enumerate(bbs):
+            check(abs(b[2]) < 1e-6,
+                  "%s: shell %d starts at z=%.4f, not on the plate"
+                  % (key, i, b[2]))
+
+        # Footprints must clear each other by a brim's width. Bounding boxes,
+        # not the solids: a brim follows the footprint, so two parts whose
+        # geometry misses but whose boxes overlap will still collide once
+        # the brim goes down.
+        for i in range(len(bbs)):
+            for j in range(i + 1, len(bbs)):
+                a, b = bbs[i], bbs[j]
+                clear = max(a[0] - b[3], b[0] - a[3],   # x gap
+                            a[1] - b[4], b[1] - a[4])   # y gap
+                check(clear >= plate.GAP - 1e-6,
+                      "%s: shells %d and %d clear each other by %.2f mm, "
+                      "under the %.2f mm a brim needs"
+                      % (key, i, j, clear, plate.GAP))
+
+        bb = m.bounding_box()
+        check(bb[3] - bb[0] <= BED and bb[4] - bb[1] <= BED,
+              "%s is %.1f x %.1f and the bed is %.0f"
+              % (key, bb[3] - bb[0], bb[4] - bb[1], BED))
+
+    # A plate must agree with the single-part files about orientation. It is
+    # built through orient(), so this is really a check that nothing in
+    # plate.build() rotates or lifts what it was handed.
+    one = bm.orient("cap", cap.build())
+    pl = bm.PARTS["plate_caps"][0]()
+    check(abs(pl.bounding_box()[5] - one.bounding_box()[5]) < 1e-6,
+          "the cap plate is a different height from a single cap - something "
+          "was reoriented on the way in")
+
+
 def main():
     for fn in (test_interfaces, test_collar, test_collar_proto,
                test_collar_snap, test_collar_lever, test_collar_pinch,
                test_collar_lap, test_collar_cinch, test_shroud,
                test_killflash, test_cap, test_mark, test_assembly,
-               test_export_orientation):
+               test_export_orientation, test_plate):
         name = fn.__name__.replace("test_", "")
         before = len(FAILS)
         fn()
