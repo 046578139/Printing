@@ -231,10 +231,17 @@ def pinch_tab_2d(r_out: float, proj: float, w: float, head_d: float,
     return round2d(stem + head, round_r)
 
 
-def traced_mark_2d(height: float = None, smooth: float = 0.12) -> CrossSection:
+def traced_mark_2d(height: float = None, smooth: float = 0.12,
+                   data: str = "mark_data") -> CrossSection:
     """The mark's 2D profile. Separated out so the hex field can be told
-    where to leave space without rebuilding the glyph."""
-    from lib import mark_data
+    where to leave space without rebuilding the glyph.
+
+    `data` names a module in lib/ written by tools/trace_mark.py - artwork or
+    rendered text, it makes no difference downstream. Passing `height` None
+    keeps whatever size it was traced at.
+    """
+    import importlib
+    mark_data = importlib.import_module("lib." + data)
     scale = 1.0 if height is None else height / mark_data.MARK_HEIGHT
     quads = [np.array([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dtype=float) * scale
              for x0, y0, x1, y1 in mark_data.RUNS]
@@ -242,7 +249,8 @@ def traced_mark_2d(height: float = None, smooth: float = 0.12) -> CrossSection:
     return round2d(cs, smooth) if smooth > 0 else cs
 
 
-def traced_mark(depth: float, height: float = None, smooth: float = 0.12):
+def traced_mark(depth: float, height: float = None, smooth: float = 0.12,
+                data: str = "mark_data"):
     """The cap's centre mark, from the traced artwork in lib/mark_data.py.
 
     The data is a set of horizontal run rectangles rather than outlines, fed
@@ -255,11 +263,12 @@ def traced_mark(depth: float, height: float = None, smooth: float = 0.12):
     this is purely to keep the vertex count sane; it is not doing anything
     the printer could otherwise see.
     """
-    return traced_mark_2d(height, smooth).extrude(depth)
+    return traced_mark_2d(height, smooth, data).extrude(depth)
 
 
-def traced_mark_size(height: float = None) -> tuple:
+def traced_mark_size(height: float = None, data: str = "mark_data") -> tuple:
     """(width, height) the traced mark will occupy, in mm."""
-    from lib import mark_data
+    import importlib
+    mark_data = importlib.import_module("lib." + data)
     scale = 1.0 if height is None else height / mark_data.MARK_HEIGHT
     return mark_data.MARK_WIDTH * scale, mark_data.MARK_HEIGHT * scale

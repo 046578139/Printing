@@ -42,6 +42,8 @@ PARTS = {
     "shroud_solid": (lambda: shroud.build(slots=0), 1, shroud.META_SOLID),
     "killflash": (killflash.build, None, killflash.META),
     "cap": (cap.build, 2, cap.META),
+    "cap_fuck": (lambda: cap.build(mark="mark_fuck"), None, cap.META_FUCK),
+    "cap_you": (lambda: cap.build(mark="mark_you"), None, cap.META_YOU),
 }
 
 FILENAME = {
@@ -56,6 +58,8 @@ FILENAME = {
     "shroud_solid": "02b_killflash_housing_solid",
     "killflash": "03_killflash_insert",
     "cap": "04_flip_cap",
+    "cap_fuck": "04b_flip_cap_FUCK",
+    "cap_you": "04c_flip_cap_YOU",
 }
 
 
@@ -70,7 +74,7 @@ def _flip(man, height):
 def orient(name, man):
     """Put a part into the orientation its META describes, so it can be
     dropped straight onto the plate."""
-    if name == "cap":
+    if name.startswith("cap"):
         return _flip(man, P.CAP_T)            # decorated face down
     if name.startswith("shroud"):
         return _flip(man, shroud.TOTAL)       # front register down

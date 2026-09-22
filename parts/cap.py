@@ -57,7 +57,11 @@ def outline():
     return round2d(prof, 0.9)          # blend the joins, inside and out
 
 
-def build():
+def build(mark: str = None, mark_h: float = None):
+    """`mark` names a traced-mark module in lib/ (see tools/trace_mark.py).
+    Default is the project mark; pass another to get a custom face. Nothing
+    else about the cap changes - same bore, same register, same everything
+    that has to fit."""
     prof = outline()
     part = prism_chamfered(prof, P.CAP_T, c_bot=0.5, c_top=0.7, steps=6)
 
@@ -91,7 +95,12 @@ def build():
     mark2d = None
     if P.MARK_ENABLE:
         if P.MARK_TRACED:
-            mark2d = traced_mark_2d(P.MARK_H)
+            # MARK_H sizes the PROJECT mark, which is tall and narrow and is
+            # constrained by height. A custom mark keeps whatever size it was
+            # traced at unless told otherwise - scaling a 36 x 9 word to a
+            # 22 mm "height" makes it 85 mm wide and off the part.
+            h = mark_h if mark_h is not None else (None if mark else P.MARK_H)
+            mark2d = traced_mark_2d(h, data=mark or P.MARK_DATA)
             cuts.append(mark2d.extrude(P.MARK_DEPTH + 0.2)
                         .translate([0.0, 0.0, P.CAP_T - P.MARK_DEPTH]))
         else:
@@ -120,3 +129,16 @@ META = dict(
          "register pocket that drops over the shroud.",
     orient="Decorated face down - ALREADY ORIENTED. No supports.",
 )
+
+
+def _variant(word, name):
+    m = dict(META)
+    m["name"] = name
+    m["desc"] = ('Custom face: "%s" in place of the centre mark. Dimensionally '
+                 'identical to 04 - same register, same cord radius, same '
+                 'skirt. Only the debossed face differs.' % word)
+    return m
+
+
+META_FUCK = _variant("FUCK", "04b_flip_cap_FUCK")
+META_YOU = _variant("YOU", "04c_flip_cap_YOU")

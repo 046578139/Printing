@@ -915,6 +915,34 @@ def test_mark():
     w, h = traced_mark_size(P.MARK_H)
     check(abs(h - P.MARK_H) < 1e-6, "mark height is %.2f, not %.2f" % (h, P.MARK_H))
 
+    # EVERY mark the build produces, not just the default one. A custom mark
+    # keeps its traced size while MARK_H sizes the project mark, and scaling
+    # a 36 x 9 word to a 22 mm "height" makes it 85 mm wide and off the part
+    # entirely - which built, validated and exported without a word of
+    # complaint, because nothing here was looking at it.
+    import build as buildmod
+    for key, (_fn, _g, _meta) in buildmod.PARTS.items():
+        if not key.startswith("cap"):
+            continue
+        data = None if key == "cap" else "mark_" + key.split("_", 1)[1]
+        mh = P.MARK_H if data is None else None
+        mw, mhh = traced_mark_size(mh, data or "mark_data")
+        half = _m.hypot(mw / 2.0, mhh / 2.0)
+        check(half + P.TEX_MARK_CLEAR <= P.TEX_FIELD_R,
+              "%s: mark is %.2f x %.2f, so its corner plus keep-out reaches "
+              "r=%.2f and the hex field is only r=%.2f - it runs off the "
+              "textured area" % (key, mw, mhh, half + P.TEX_MARK_CLEAR,
+                                 P.TEX_FIELD_R))
+        check(mw <= P.CAP_OD - 6.0,
+              "%s: mark is %.2f wide on a %.2f cap" % (key, mw, P.CAP_OD))
+        # Custom faces must not change anything that has to FIT.
+        if data:
+            import importlib
+            md = importlib.import_module("lib." + data)
+            check(md.MIN_STROKE >= P.LINE_WIDTH,
+                  "%s was traced at a %.2f minimum stroke, under the %.2f "
+                  "line width" % (key, md.MIN_STROKE, P.LINE_WIDTH))
+
     # It has to sit inside the hex field, which now covers the whole face.
     # The glyph is tall and narrow, so its HEIGHT against the field radius is
     # the binding constraint and the cap's width never is.

@@ -630,7 +630,8 @@ TEX_WALL        = round(NOZZLE * 1.6, 2)
 
 # Centre mark. Generic chevron/mountain deboss - swap or disable freely.
 MARK_ENABLE     = True
-MARK_TRACED     = True    # use the traced artwork in lib/mark_data.py
+MARK_TRACED     = True    # use a traced mark from lib/
+MARK_DATA       = "mark_data"   # which one; see tools/trace_mark.py
 MARK_H          = 22.00   # sized by HEIGHT - the glyph is tall and narrow,
                           # and what constrains it is the 19 mm clear band
                           # between the two grip panels, not the cap width
