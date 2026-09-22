@@ -131,7 +131,35 @@ are on the plate side, so plate finish is what you see — a smooth PEI sheet
 gives a satin face, a textured sheet gives a matte one. For night vision,
 **textured**: no glint.
 
-### Two-tone face — optional
+### Two-tone face — use the 3MF
+
+**An STL cannot carry colour.** It is a bag of triangles with no notion of a
+part or a filament, so no amount of combining produces a two-tone cap. That
+is what 3MF is for: objects, the parts inside them, and which extruder each
+part prints with.
+
+| File | Contents |
+|---|---|
+| `20_cap_FUCK_2color.3mf` | FUCK cap, body + lettering + hex |
+| `21_cap_YOU_2color.3mf` | YOU cap, same |
+| `22_caps_FUCK_YOU_2color.3mf` | Both caps on one plate |
+| `23_cap_2color.3mf` | The standard P cap |
+
+Each is **two filaments**: body on slot 1, lettering and hex field both on
+slot 2. Three parts, two colours. Open it, check the filament slots on the
+right match what is loaded, slice. Nothing to position or assign.
+
+`python3 tools/make_3mf.py` regenerates them. Swap `GREY`/`TEAL` at the top
+of that file to move a part to a different slot.
+
+#### If the 3MF does not come in right
+
+Load `04b_flip_cap_FUCK.stl`, then right-click it → **Add Part → Load** and
+pick `04b_inlay_FUCK.stl`, then again for `04b_inlay_hex_FUCK.stl`. Click
+each inlay in the object tree and set its filament. Same result, three
+clicks.
+
+### The inlay files
 
 The decorated face can be printed in two or three filaments. Every recess on
 it has a matching **inlay** file that fills it exactly flush:
